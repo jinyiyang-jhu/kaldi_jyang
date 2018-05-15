@@ -1,27 +1,32 @@
 #!/bin/bash
 
-if [ $# != 3 ];then
-    echo "input: wav.scp/wav.list"
-    echo "snrlist"
-    echo " noisetype.list"
+if [ $# != 4 ];then
+    echo "$0 input_wav.scp output_dir snr_list noisetype_list"
     exit 1
 fi
 
 iwvlist=$1
-snrlist=$2
-noiselist=$3
-basedir=`dirname $0`
-$basedir/create_lists.sh $iwvlist $snrlist $noiselist
+owvdir=$2
+snrlist=$3
+noiselist=$4
+ipipe="True"
 
-noisedir=$basedir/noises
+
+if [ ! -f $owvdir/add_noise.py ];then
+    cmdfile="/export/b07/jyang/kaldi-jyang/kaldi/egs/wsj/s5/tools/add_noise_jinyi/add_noise.py"
+    echo "Copy $cmdfile to your directory and chmod"
+    exit 1
+fi
+
+noisedir='/home/jyang/timit_phoneme_recognition/fant/noises/preMIRS'
 while read n; do
     echo "Noise type is $n"
     noisefile=$noisedir/$n.wav
     while read s; do
         echo "SNR is $s"
-        ilist=$basedir/lists/in.new.$n.snr${s}
-        olist=$basedir/lists/out.new.$n.snr${s}
-        $basedir/add_noise.py --i $ilist --o $olist --n $noisefile --snr $s
+        olist=$owvdir/wav_noise_${n}_snr_${s}.scp
+        noisefile=$noisedir/$n.wav
+        awk '{print $0" python3 add_noise.py - --n '$noisefile' --ipipe '$ipipe' --snr '$s' |"}' $iwvlist > $olist
     done < $snrlist
 done < $noiselist
 
