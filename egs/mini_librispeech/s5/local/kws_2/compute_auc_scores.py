@@ -103,14 +103,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('ref_post', help='Reference align posterior')
     parser.add_argument('hyp_post', help='Decoded lattice posterior')
+    parser.add_argument('--chain_model', action='store_true', default=False,
+        help='True if lattice is from chain model, then time frames will be multiplied by 3')
     args = parser.parse_args()
-
+    chain_model = args.chain_model
     ref_fid = open(args.ref_post, 'r', encoding='utf-8')
     hyp_fid = open(args.hyp_post, 'r', encoding='utf-8')
     ref_line = ref_fid.readline()
     ref_uttid_previous, ref_word, ref_info = read_post_line(ref_line)
     hyp_line = hyp_fid.readline()
-    hyp_uttid_previous, hyp_word, hyp_info = read_post_line(hyp_line, chain_model=True)
+    hyp_uttid_previous, hyp_word, hyp_info = read_post_line(hyp_line, chain_model=chain_model)
     ref_dict = {}
     hyp_dict = {}
     ref_dict[ref_word] = [ref_info]
@@ -143,7 +145,7 @@ if __name__ == '__main__':
                 ref_dict[ref_word] = [ref_info]
         elif not hyp_eos:
             hyp_line = hyp_fid.readline()
-            hyp_uttid, hyp_word, hyp_info = read_post_line(hyp_line, chain_model=True)
+            hyp_uttid, hyp_word, hyp_info = read_post_line(hyp_line, chain_model=chain_model)
             if hyp_uttid != hyp_uttid_previous:
                 hyp_eos = True
             elif hyp_word in hyp_dict.keys():
