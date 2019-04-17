@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
     int32 phi_label = fst::kNoLabel; // == -1
     po.Register("write-compact", &write_compact, "If true, write in normal (compact) form.");
     po.Register("phi-label", &phi_label, "If >0, the label on backoff arcs of the LM");
+    po.Register("rho-label", &rho_label, "If >0, the label on backoff arcs "
+                "where composition algorithm fails to find a match for a label")
     po.Register("num-states-cache", &num_states_cache,
                 "Number of states we cache when mapping LM FST to lattice type. "
                 "More -> more memory but faster.");
@@ -63,6 +65,7 @@ int main(int argc, char *argv[]) {
     }
 
     KALDI_ASSERT(phi_label > 0 || phi_label == fst::kNoLabel); // e.g. 0 not allowed.
+    KALDI_ASSERT(rho_label > 0 || rho_label == fst::kNoLabel); // e.g. 0 not allowed.
 
     std::string lats_rspecifier1 = po.GetArg(1),
         arg2 = po.GetArg(2),
@@ -70,7 +73,7 @@ int main(int argc, char *argv[]) {
     int32 n_done = 0, n_fail = 0;
 
     SequentialLatticeReader lattice_reader1(lats_rspecifier1);
-    
+
     CompactLatticeWriter compact_lattice_writer;
     LatticeWriter lattice_writer;
 
@@ -105,6 +108,7 @@ int main(int argc, char *argv[]) {
         ArcSort(&lat1, fst::OLabelCompare<LatticeArc>());
         Lattice composed_lat;
         if (phi_label > 0) PhiCompose(lat1, mapped_fst2, phi_label, &composed_lat);
+        else if (rho_label > 0) RhoCompose(lat1, mapped_fst2, rho_label, &composed_lat);
         else Compose(lat1, mapped_fst2, &composed_lat);
         if (composed_lat.Start() == fst::kNoStateId) {
           KALDI_WARN << "Empty lattice for utterance " << key << " (incompatible LM?)";
@@ -154,7 +158,11 @@ int main(int argc, char *argv[]) {
         if (phi_label > 0) {
           PropagateFinal(phi_label, &lat2);
           PhiCompose(lat1, lat2, phi_label, &lat_out);
-        } else {
+        }
+        else if (rho_label > 0) {
+          RhoCompose(lat1, lat2, rho_label, &lat_out);
+        }
+        else {
           Compose(lat1, lat2, &lat_out);
         }
         if (lat_out.Start() == fst::kNoStateId) {
