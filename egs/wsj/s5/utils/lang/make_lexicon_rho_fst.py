@@ -259,6 +259,10 @@ def write_fst_with_silence(lexicon, sil_prob, sil_phone, sil_disambig,
     print('{src}\t{dest}\t{phone}\t{word}\t{cost}'.format(
         src=start_state, dest=sil_state,
         phone='<eps>', word='<eps>', cost=sil_cost))
+    print('{src}\t{dest}\t{phone}\t{word}\t{cost}'.format(
+        src=loop_state, dest=loop_state,
+        phone=rho_sym, word=invalid_sym, cost=sil_cost))
+
     if sil_disambig is None:
         print('{src}\t{dest}\t{phone}\t{word}\t{cost}'.format(
             src=sil_state, dest=loop_state,
