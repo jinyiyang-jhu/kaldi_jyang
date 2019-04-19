@@ -42,8 +42,8 @@ def get_args():
                         disambiguation symbols and phone symbols.""")
     parser.add_argument('--rho-sym', dest='rho_sym', type=str,
                         help="""Symbol for rho matcher""")
-    parser.add_argument('--invalid-sym', dest='invalid_sym', type=str,
-                        help="""Symbol for invalid word""")
+    parser.add_argument('--oov-sym', dest='oov_sym', type=str,
+                        help="""Symbol for oov word""")
     parser.add_argument('--left-context-phones', dest='left_context_phones', type=str,
                         help="""Only relevant if --nonterminals is also supplied; this relates
                         to grammar decoding (see http://kaldi-asr.org/doc/grammar.html or
@@ -222,7 +222,7 @@ def write_fst_no_silence(lexicon, nonterminals=None, left_context_phones=None):
 
 
 def write_fst_with_silence(lexicon, sil_prob, sil_phone, sil_disambig,
-                           rho_sym, invalid_sym,
+                           rho_sym, oov_sym,
                            nonterminals=None, left_context_phones=None):
     """Writes the text format of L.fst to the standard output.  This version is for
        when --sil-prob != 0.0, meaning there is optional silence
@@ -261,7 +261,7 @@ def write_fst_with_silence(lexicon, sil_prob, sil_phone, sil_disambig,
         phone='<eps>', word='<eps>', cost=sil_cost))
     print('{src}\t{dest}\t{phone}\t{word}\t{cost}'.format(
         src=loop_state, dest=loop_state,
-        phone=rho_sym, word=invalid_sym, cost=sil_cost))
+        phone=rho_sym, word=oov_sym, cost=sil_cost))
 
     if sil_disambig is None:
         print('{src}\t{dest}\t{phone}\t{word}\t{cost}'.format(
@@ -290,17 +290,17 @@ def write_fst_with_silence(lexicon, sil_prob, sil_phone, sil_disambig,
             print("{src}\t{dest}\t{phone}\t{word}\t{cost}".format(
                 src=next_state, dest=loop_state,
                 phone=rho_sym,
-                word=invalid_sym,
+                word=oov_sym,
                 cost=no_sil_cost + pron_cost))
             print("{src}\t{dest}\t{phone}\t{word}\t{cost}".format(
                 src=next_state, dest=sil_state,
                 phone=rho_sym,
-                word=invalid_sym,
+                word=oov_sym,
                 cost=sil_cost + pron_cost))
             print("{src}\t{dest}\t{phone}\t{word}\t{cost}".format(
                 src=next_state, dest=final_state,
                 phone='<eps>',
-                word=invalid_sym,
+                word=oov_sym,
                 cost=sil_cost + pron_cost))
             cur_state = next_state
             next_state += 1
@@ -424,7 +424,7 @@ def main():
             sys.exit(1)
         write_fst_with_silence(lexicon, args.sil_prob, args.sil_phone,
                                args.sil_disambig, args.rho_sym,
-                               args.invalid_sym,
+                               args.oov_sym,
                                nonterminals=nonterminals,
                                left_context_phones=left_context_phones)
 
