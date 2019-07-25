@@ -3,9 +3,11 @@
 
 lattice_type="word"
 chain_model="" # "--chain_model"
+cmd="run.pl"
 
 [ -f path.sh ] && . ./path.sh
 . parse_options.sh || exit 1;
+. cmd.sh
 
 if [ $# -ne 5 ];then
     echo "Usage: $0 [--lattice-type word | phone ] [ --chain-model ] <data-dir> <lang> <align-dir> <decode-dir> <result-dir>"

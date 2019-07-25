@@ -21,7 +21,7 @@ def read_post_line(line, chain_model=False):
             tokens[1] *= 3
     return uttid, word, tokens
 
-def compute_overlap(period1, period2):
+def compute_overlap(period1, period2, current_word):
     '''Compute the overlap percentage between two time periods.
     Args:
     period1: list of [stime, etime], dtype=float
@@ -31,11 +31,15 @@ def compute_overlap(period1, period2):
     # Overlap
         stime = max(period1[0], period2[0])
         etime = min(period1[1], period2[1])
-        return (etime - stime) / (period1[1] - period1[0])
+        denom = period1[1] - period1[0]
+        if denom > 0.:
+            return (etime - stime) / (period1[1] - period1[0])
+        else:
+            sys.exit(f'Word {current_word} has bad time : {period1}')
     else:
         return 0.
 
-def check_duplicates(stored, current):
+def check_duplicates(stored, current, current_word):
     '''Before store the current word instance, check if there are alreay
     duplicating words within time overlap tolerance. If so, only keep the one
     with largest probability
@@ -46,7 +50,7 @@ def check_duplicates(stored, current):
     overlap_flag = 1
     update_stored = []
     for i, token in enumerate(stored):
-        overlap = compute_overlap([token[0], token[1]], [current[0], current[1]])
+        overlap = compute_overlap([token[0], token[1]], [current[0], current[1]], current_word)
         if overlap > 0.:
             if token[2] >= current[2]:
                 overlap_flag = 0
@@ -57,7 +61,7 @@ def check_duplicates(stored, current):
         update_stored.append(current)
     return update_stored
 
-def detect(ref_words_info, hyp_words_info, uttid, overlap_thres=.5):
+def detect(ref_words_info, hyp_words_info, uttid, score_fid, overlap_thres=.5):
     '''Search current reference word instance in all hypotheses instances.
     Args:
     ref_words_info: (ref_word: [begin_time1, duration1, probability1])
@@ -74,13 +78,13 @@ def detect(ref_words_info, hyp_words_info, uttid, overlap_thres=.5):
     detect_flag = 0
     for hyp in hyp_instances:
         hyp_period = [hyp[0], hyp[1]]
-        if compute_overlap(ref_period, hyp_period) >= overlap_thres:
+        if compute_overlap(ref_period, hyp_period, hyp_word) >= overlap_thres:
             detect_flag = 1
-            print(f'{uttid} {ref_word} {hyp_word} {hyp[2]}')
+            print(f'{uttid} {ref_word} {hyp_word} {hyp[2]}', file=score_fid)
     return detect_flag
 
 
-def compute_search_results(uttid, dict_ref, dict_hyp, overlap_thres=.5):
+def compute_search_results(uttid, dict_ref, dict_hyp, score_fid, overlap_thres=.5):
     '''Search all word instances in current utterance.
     uttid: current utterance id
     dict_ref: {ref_word: [[begin_time1, duration1, probability1], ...]}
@@ -95,20 +99,24 @@ def compute_search_results(uttid, dict_ref, dict_hyp, overlap_thres=.5):
             detect_flag = 0
             for hyp in dict_hyp.items():
                 detect_flag += detect(ref_words_info=ref_item, hyp_words_info=hyp,
-                                     uttid=uttid, overlap_thres=overlap_thres)
+                                     uttid=uttid, score_fid=score_fid,
+                                     overlap_thres=overlap_thres)
             if detect_flag == 0:
-                print(f'{uttid} {refs[0]} <eps> -1.')
+                print(f'{uttid} {refs[0]} <eps> -1.', file=score_fid)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('ref_post', help='Reference align posterior')
-    parser.add_argument('hyp_post', help='Decoded lattice posterior')
+    parser.add_argument('ref_post', help='Reference align posterior, format is like:\
+    <Utt-id> <start-time> <duration> <posterior> <word> <phone1-id> <phone2-id> ...')
+    parser.add_argument('hyp_post', help='Decoded lattice posterior. Same format as "ref_post"')
+    parser.add_argument('score_file', help='Output file to store the scores.')
     parser.add_argument('--chain_model', action='store_true', default=False,
-        help='True if lattice is from chain model, then time frames will be multiplied by 3')
+        help='True if lattice is from chain model, then time frames will be multiplied by 3.')
     args = parser.parse_args()
     chain_model = args.chain_model
     ref_fid = open(args.ref_post, 'r', encoding='utf-8')
     hyp_fid = open(args.hyp_post, 'r', encoding='utf-8')
+    score_fid = open(args.score_file, 'w', encoding='utf-8')
     ref_line = ref_fid.readline()
     ref_uttid_previous, ref_word, ref_info = read_post_line(ref_line)
     hyp_line = hyp_fid.readline()
@@ -125,7 +133,8 @@ if __name__ == '__main__':
                 sys.exit(f'Reference and hypothesis utterance id order different,\
                 ref: {ref_uttid} hyp: {hyp_uttid}')
             else:
-                compute_search_results(ref_uttid_previous, ref_dict, hyp_dict)
+                print(f'Computing score for utterance: {ref_uttid_previous}')
+                compute_search_results(ref_uttid_previous, ref_dict, hyp_dict, score_fid)
                 ref_dict = {}
                 hyp_dict = {}
                 ref_dict[ref_word] = [ref_info]
@@ -140,7 +149,7 @@ if __name__ == '__main__':
             if ref_uttid != ref_uttid_previous:
                 ref_eos = True
             elif ref_word in ref_dict.keys():
-                ref_dict[ref_word] = check_duplicates(ref_dict[ref_word], ref_info)
+                ref_dict[ref_word] = check_duplicates(ref_dict[ref_word], ref_info, ref_word)
             else:
                 ref_dict[ref_word] = [ref_info]
         elif not hyp_eos:
@@ -149,9 +158,10 @@ if __name__ == '__main__':
             if hyp_uttid != hyp_uttid_previous:
                 hyp_eos = True
             elif hyp_word in hyp_dict.keys():
-                hyp_dict[hyp_word] = check_duplicates(hyp_dict[hyp_word], hyp_info)
+                hyp_dict[hyp_word] = check_duplicates(hyp_dict[hyp_word], hyp_info, hyp_word)
             else:
                 hyp_dict[hyp_word] = [hyp_info]
     compute_search_results(ref_uttid_previous, ref_dict, hyp_dict)
     ref_fid.close()
     hyp_fid.close()
+    score_fid.close()
