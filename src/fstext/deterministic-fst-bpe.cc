@@ -73,8 +73,15 @@ namespace fst {
 /// "const" in this interface, because it creates problems when we do things
 /// like caching.
 
-BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(
-        public fst::DeterministicOnDemandFst<fst::StdArc> {
+BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon,
+                                                     StopWords *bpe_stops) {
+  lexicon_map_ = lexicon;
+  bpe_stops_ = bpe_stops;
+  start_state_ = 0;
+  std::vector<Label> bos;
+  bseq_to_state_[bos] = 0;
+  state_to_bseq_.push_back(bos);
+}
  public:
   typedef fst::StdArc::StateId StateId;
   typedef fst::StdArc::Weight Weight;

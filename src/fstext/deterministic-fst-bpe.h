@@ -84,7 +84,7 @@ class BPEDeterministicOnDemandFst:
   typedef fst::StdArc::Label Label;
 
   //It takes in the word-to-bpe vocabulary, and stop words list.
-  BPEDeterministicOnDemandFst(LexiconMap *lexicon, StopWords *stop_words);
+  BPEDeterministicOnDemandFst(LexiconMap *lexicon, BpeStopSymbols *bpe_stops);
   virtual StateId Start() { return start_state_; }
   virtual Weight Final(StateId s);
   virtual bool GetArc(StateId s, Label ilabel, fst::StdArc *oarc);
@@ -94,15 +94,15 @@ class BPEDeterministicOnDemandFst:
   typedef std::unordered_map<std::vector<Label>, Label, VectorHasher<Label> > LexiconMap;
   typedef std::unordered_set<Label> BpeStopSymbols;
 
-  MapType bseq_to_state_;   // Stores BPE sequence to state map
   LexiconMap *lexicon_map_;    // Unordered map from vector of bpe symbols (ints) to corresponding word (int)
   BpeStopSymbols *bpe_stops_; // Unordered map storing bpe symbols (ints) that can end words (without @@ at the end)
-  StateId start_state_ = 0; // Fst start state
+  StateId start_state_  // Fst start state
   //int max_len_; // Place to store the max length of input bpe sequence, if it
                 //is beyond this length without matching word, clear the context and output oov-symbol;
-
+  MapType bseq_to_state_;   // Stores BPE sequence to state map
   // Map from history-state to pair.
   std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
+  std::vector<std::vector<Label> > state_to_context_; // Store the history of the current state
 };
 } //namespace fst
 } //namespace kaldi
