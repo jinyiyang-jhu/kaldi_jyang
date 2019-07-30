@@ -23,7 +23,7 @@ sph2pipe=`which sph2pipe` || sph2pipe=$KALDI_ROOT/tools/sph2pipe_v2.5/sph2pipe
 mkdir -p $tmpdir
 
 # Find all TDT4 Mandarin audios
-find /export/corpora/LDC/LDC2005S11/TDT4_MAN_*/sph/* -iname "*.sph" > $tmpdir/all_sph.flist || exit 1;
+find $tdt4_audio_dir/TDT4_MAN_*/sph/* -name "*.sph" > $tmpdir/all_sph.flist || exit 1;
 
 nfiles=`cat $tmpdir/all_sph.flist | wc -l`
 [ $nfiles -ne 424 ] && echo "Warning: expected 424 sph files, found $nfiles"
@@ -33,4 +33,4 @@ awk '{name = $0; gsub(".sph$","",name); gsub(".*/","",name); print(name " " $0)}
 # There are two channels in each audio containing same content, so we only keep the first channel audio
 cat data/local/all_sph.scp | awk -v sph2pipe=$sph2pipe '{printf("%s %s -f wav -p -c 1 %s |\n", $1, sph2pipe, $2);}' | sort > $tmpdir/all_wav.scp
 
-
+echo "TDT4 Mandarin audio preparation succeed !"
