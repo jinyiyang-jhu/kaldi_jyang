@@ -28,9 +28,25 @@ set -x
 #                       Lexicon preparation
 #########################################################
 #local/hkust_prepare_dict.sh || exit 1;
-utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang data/lang
+#utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang data/lang
 
 #########################################################
-# 
+#                       LM training
 #########################################################
+# Text is too few to use KN smoothing, using W-B, will add more text from gale_mandarin
+# later
+#local/tdt4_mandarin_train_lms.sh
 
+#local/tdt4_mandarin_format_data.sh
+
+
+#########################################################
+#                      Extract MFCC plus pitch features
+#########################################################
+for x in train dev ; do
+  utils/fix_data_dir.sh data/$x
+  steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj $num_jobs \
+    data/$x exp/make_mfcc/$x $mfccdir
+  utils/fix_data_dir.sh data/$x # some files fail to get mfcc for many reasons
+  steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir
+done
