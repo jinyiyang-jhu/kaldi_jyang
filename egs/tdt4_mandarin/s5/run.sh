@@ -10,6 +10,8 @@
 stage=4
 num_jobs=32
 num_jobs_decode=32
+train_nj=32
+decode_nj=4
 
 AUDIO=/export/corpora/LDC/LDC2005S11
 TEXT=/export/corpora/LDC/LDC2005T16
@@ -57,10 +59,93 @@ if [ $stage -le 3 ]; then
 fi
 
 utils/fix_data_dir.sh data/train || exit 1;
-
 if [ $stage -le 4 ]; then
 ########################################################################
 #                      Monophone training
 ########################################################################
+#utils/subset_data_dir.sh --first data/train 4000 data/train_4k || exit 1;
+  steps/train_mono.sh --cmd "$train_cmd" --nj $train_nj \
+    data/train data/lang exp/mono || exit 1;
+# Monophone decode
+  utils/mkgraph.sh data/lang_test exp/mono exp/mono/graph || exit 1;
+  steps/decode.sh --cmd "$decode_cmd" --config decode.config --nj $decode_nj \
+    exp/mono/graph data/dev exp/mono/decode
+# Monophone align
+  steps/align_si.sh --cmd "$train_cmd" --nj $train_nj \
+    data/train data/lang exp/mono exp/mono_ali || exit 1;
+fi
 
+if [ $stage -le 5 ]; then
+########################################################################
+#                      Triphone training
+########################################################################
+  steps/train_deltas.sh --cmd "$train_cmd" \
+   2500 20000 data/train data/lang exp/mono_ali exp/tri1 || exit 1;
+  # Decode tri1
+  utils/mkgraph.sh data/lang_test exp/tri1 exp/tri1/graph || exit 1;
+  steps/decode.sh --cmd "$decode_cmd" --config conf/decode.config --nj $decode_nj \
+    exp/tri1/graph data/dev exp/tri1/decode
+  # Align tri1
+  steps/align_si.sh --cmd "$train_cmd" --nj $train_nj \
+    data/train data/lang exp/tri1 exp/tri1_ali || exit 1;
+fi
+
+if [ $stage -le 6 ]; then
+########################################################################
+#                      Triphone [delta+delta]training
+########################################################################
+  steps/train_deltas.sh --cmd "$train_cmd" \
+   2500 20000 data/train data/lang exp/tri1_ali exp/tri2 || exit 1; 
+  # Decode tri2
+  utils/mkgraph.sh data/lang_test exp/tri2 exp/tri2/graph
+  steps/decode.sh --cmd "$decode_cmd" --config conf/decode.config --nj $decode_nj \
+    exp/tri2/graph data/dev exp/tri2/decode
+  # Align tri2
+  steps/align_si.sh --cmd "$train_cmd" --nj $train_nj \
+    data/train data/lang exp/tri2 exp/tri2_ali || exit 1;
+fi
+
+if [ $stage -le 7 ]; then
+########################################################################
+#                      Triphone [LDA+MLLLT]training
+########################################################################
+  steps/train_lda_mllt.sh --cmd "$train_cmd" \
+   2500 20000 data/train data/lang exp/tri2_ali exp/tri3a || exit 1;
+  # Decode tri3a
+  utils/mkgraph.sh data/lang_test exp/tri3a exp/tri3a/graph || exit 1;
+  steps/decode.sh --cmd "$decode_cmd" --nj $decode_nj --config conf/decode.config \
+    exp/tri3a/graph data/dev exp/tri3a/decode
+  # Align tri3a 
+  steps/align_fmllr.sh --cmd "$train_cmd" --nj $train_nj \
+    data/train data/lang exp/tri3a exp/tri3a_ali || exit 1;
+fi
+
+if [ $stage -le 8 ]; then
+########################################################################
+#                      Triphone [SAT]training
+########################################################################
+  steps/train_sat.sh --cmd "$train_cmd" \
+    2500 20000 data/train data/lang exp/tri3a_ali exp/tri4a || exit 1;
+  # Decode tri4a 
+  utils/mkgraph.sh data/lang_test exp/tri4a exp/tri4a/graph
+  steps/decode_fmllr.sh --cmd "$decode_cmd" --nj $decode_nj --config conf/decode.config \
+    exp/tri4a/graph data/dev exp/tri4a/decode
+  # Align tri4a
+  steps/align_fmllr.sh  --cmd "$train_cmd" --nj $decode_nj \
+    data/train data/lang exp/tri4a exp/tri4a_ali
+fi
+
+if [ $stage -le 9 ]; then
+########################################################################
+#                      Triphone [SAT]training
+########################################################################
+  steps/train_sat.sh --cmd "$train_cmd" \
+    3500 100000 data/train data/lang exp/tri4a_ali exp/tri5a || exit 1;
+  # Decode tri5a 
+  utils/mkgraph.sh data/lang_test exp/tri5a exp/tri5a/graph
+  steps/decode_fmllr.sh --cmd "$decode_cmd" --nj $decode_nj --config conf/decode.config \
+    exp/tri5a/graph data/dev exp/tri5a/decode
+  # Align tri4a
+  steps/align_fmllr.sh  --cmd "$train_cmd" --nj $decode_nj \
+    data/train data/lang exp/tri5a exp/tri5a_ali
 fi
