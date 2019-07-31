@@ -31,6 +31,6 @@ nfiles=`cat $tmpdir/all_sph.flist | wc -l`
 awk '{name = $0; gsub(".sph$","",name); gsub(".*/","",name); print(name " " $0)}' $tmpdir/all_sph.flist > $tmpdir/all_sph.scp
 
 # There are two channels in each audio containing same content, so we only keep the first channel audio
-cat data/local/all_sph.scp | awk -v sph2pipe=$sph2pipe '{printf("%s %s -f wav -p -c 1 %s |\n", $1, sph2pipe, $2);}' | sort > $tmpdir/all_wav.scp
+cat data/local/all_sph.scp | awk -v sph2pipe=$sph2pipe '{printf("%s %s -f wav -p -c 1 %s |\n", $1, sph2pipe, $2);}' | sort > $tmpdir/all.wav.scp
 
 echo "TDT4 Mandarin audio preparation succeed !"
