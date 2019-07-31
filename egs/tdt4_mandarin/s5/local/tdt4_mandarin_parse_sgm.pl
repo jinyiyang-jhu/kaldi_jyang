@@ -21,6 +21,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
+use Time::Piece;
 
 require HTML::Parser or die "This script needs HTML::Parser from CPAN";
 HTML::Parser->import();
@@ -30,19 +31,41 @@ binmode(STDOUT, ":utf8");
 sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
 sub get_doc_no {
-    my $tag = shift(@_);
-    my @tmpdoc = split /\s+/, $tag;
-    my @doc_nos = split /\./, $tmpdoc[1];
-    return @doc_nos;
-    }
+  my $tag = shift(@_);
+  my @tmpdoc = split /\s+/, $tag;
+  my @doc_nos = split /\./, $tmpdoc[1];
+  return @doc_nos;
+}
 
 sub check_doc_type {
-    my $tag = shift(@_);
-    if ( $tag =~ /MISCELLANEOUS|UNTRANSCRIBED/){
-      return 0;
-    }
-    else {
+  my $tag = shift(@_);
+  if ( $tag =~ /MISCELLANEOUS|UNTRANSCRIBED/){
+    return 0;
+    ;
+  } else {
       return 1;
+  }
+}
+
+sub str2time {
+  my ($str) = @_;
+  $str =~ s/(\.[0-9]+)?\z//;
+  my $fraction = $1 || 0;
+  return Time::Piece->strptime($str, '%H:%M:%S')->epoch + $fraction;
+}
+
+sub get_time_tag{
+    my $start = shift(@_);
+    my $end = shift(@_);
+    if (($start ne "") && ($end ne "")) {
+      $start = sprintf("%.2f", $start);
+      $end = sprintf("%.2f", $end);
+      my $tag = sprintf("%06.0f_%06.0f", 100*$start+0.5, 100*$end+0.5);
+     return $tag;
+     ;
+    } else{
+       print STDERR "$0: Empty time tag: $start or $end\n";
+       return "";
     }
 }
 
@@ -75,6 +98,11 @@ foreach my $file (@files) {
   my @docno = ();
   my $doc_id = "";
   my @text = ();
+  my $start_time = 0;
+  my $end_time = 0;
+  my $doc_start_time = 0;
+  my $current_time = 0;
+  my @times = ();
 
   my $sgml_file = `basename $file`;
   $sgml_file = trim $sgml_file;
@@ -84,7 +112,6 @@ foreach my $file (@files) {
 
   open(my $f, '<:encoding(iso-8859-1)', $file) or die "Could not open file $file: $?\n";
   while(my $line = <$f>) {
-    chomp $line;
     $line = trim $line;
     next unless $line;
 
@@ -95,21 +122,42 @@ foreach my $file (@files) {
         print STDERR "$0: WARNING: SGML filename does not match $line in file $file\n";
       }
       $doc_id = $docno[2]; # Four digits
+      ;
+    } elsif($line =~ /<DATE_TIME>/ ){
+        @times = split /\s+/, $line;
+        $current_time = str2time($times[2]);
+        if ($doc_start_time ==  0){
+          $doc_start_time = $current_time;
+          $start_time = 0;
+          ;
+        } else {
+          $start_time = $current_time - $doc_start_time;
+        }
+      ;
+    } elsif($line =~ /<END_TIME>/){
+        @times = split /\s+/, $line;
+        $end_time = str2time($times[2]) - $doc_start_time;
+        #$start_time = 0;
+      ;
     } elsif ($line =~ /<DOCTYPE>/) {
       $doctype = check_doc_type $line;
+      ;
     } elsif ($line eq "<\/DOC>") {
       if ((@text > 0) && ($doctype)) {
-        $docname = $sgml_file."_".$doc_id; 
+        my $time_tag = get_time_tag($start_time, $end_time);
+        $docname = $sgml_file."_".$doc_id."_".$time_tag;
         print "$docname ";
         print join(" ", @text) . "\n";
       }
       $docname = "";
       @text = ();
+      ;
     } elsif ($line !~ "<") {
       $line = trim $line;
       #$line = encode("utf-8", decode("ISO-8859-1", $line));
       $line = decode("gbk", $line);
       push @text, $line if $line;
+      ;
     }
   }
   close($f);

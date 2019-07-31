@@ -22,7 +22,7 @@ sph_scp=$tmpdir/all_wav.scp
 # so we only choose the transcriptions with corresponding audio data.
 find $tdt4_text_dir -name "*MAN.src_sgm" | awk 'NR==FNR {a[$1];next}; {name=$0;
 gsub(".src_sgm$", "", name); gsub(".*/", "", name); if (name in a) print $0}' $sph_scp - | sort > $tmpdir/all_trans.flist  || exit 1;
-
+echo "Perl "
 perl local/tdt4_mandarin_parse_sgm.pl $tmpdir/all_trans.flist > $tmpdir/alltext.tmp || exit 1;
 cut -d " " -f1 $tmpdir/alltext.tmp > $tmpdir/allid.tmp
 cut -d " " -f2- $tmpdir/alltext.tmp | sed 's/\s\+//g' > $tmpdir/all.trans
