@@ -3,9 +3,21 @@
 
 # To be run from one directory above this script.
 
+extra_text=
 . path.sh
-text=data/local/train/text
+. utils/parse_options.sh
+
 lexicon=data/local/dict/lexicon.txt
+
+if [ ! -z $extra_text ];then
+    echo "Using extra text for LM training: $extra_text"
+    cat data/local/train/text $extra_text > data/local/lm_text
+else
+    echo "No extra text, using train text for LM"
+    cp data/local/train/text data/local/lm_text
+fi
+text=data/local/lm_text
+
 
 for f in "$text" "$lexicon"; do
   [ ! -f $x ] && echo "$0: No such file $f" && exit 1;
@@ -69,7 +81,7 @@ cat $cleantext | awk -v wmap=$dir/word_map 'BEGIN{while((getline<wmap)>0)map[$1]
 
 # From here is some commands to do a baseline with SRILM (assuming
 # you have it installed).
-heldout_sent=100 # Don't change this if you want result to be comparable with
+heldout_sent=10000 # Don't change this if you want result to be comparable with
     # kaldi_lm results
 sdir=$dir/srilm # in case we want to use SRILM to double-check perplexities.
 mkdir -p $sdir
@@ -82,7 +94,7 @@ cat $dir/word_map | awk '{print $1}' | cat - <(echo "<s>"; echo "</s>" ) > $sdir
 
 
 ngram-count -text $sdir/train -order 3 -limit-vocab -vocab $sdir/wordlist -unk \
-  -map-unk "<UNK>" -wbdiscount1 -wbdiscount2 -interpolate -lm $sdir/srilm.o3g.kn.gz
+  -map-unk "<UNK>" -kndiscount -interpolate -lm $sdir/srilm.o3g.kn.gz
 ngram -lm $sdir/srilm.o3g.kn.gz -ppl $sdir/heldout
 # 0 zeroprobs, logprob= -250954 ppl= 90.5091 ppl1= 132.482
 
