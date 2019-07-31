@@ -39,7 +39,7 @@ sub get_doc_no {
 
 sub check_doc_type {
   my $tag = shift(@_);
-  if ( $tag =~ /MISCELLANEOUS|UNTRANSCRIBED/){
+  if ( $tag =~ /UNTRANSCRIBED/){
     return 0;
     ;
   } else {

@@ -22,7 +22,6 @@ sph_scp=$tmpdir/all_wav.scp
 # so we only choose the transcriptions with corresponding audio data.
 find $tdt4_text_dir -name "*MAN.src_sgm" | awk 'NR==FNR {a[$1];next}; {name=$0;
 gsub(".src_sgm$", "", name); gsub(".*/", "", name); if (name in a) print $0}' $sph_scp - | sort > $tmpdir/all_trans.flist  || exit 1;
-echo "Perl "
 perl local/tdt4_mandarin_parse_sgm.pl $tmpdir/all_trans.flist > $tmpdir/alltext.tmp || exit 1;
 cut -d " " -f1 $tmpdir/alltext.tmp > $tmpdir/allid.tmp
 cut -d " " -f2- $tmpdir/alltext.tmp | sed 's/\s\+//g' > $tmpdir/all.trans
@@ -37,5 +36,8 @@ cat $tmpdir/all.trans |\
 
 awk '{spk=substr($1,1,26);print $1" "spk}' $tmpdir/all.text > $tmpdir/all.utt2spk || exit 1;
 cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.spk2utt || exit 1;
+
+awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=6;++i) uttid=uttid"_"S[i];
+  print segments " " uttid " " S[7]/100 " " S[8]/100}' < $tmpdir/all.text > $tmpdir/all.segments
 
 echo "TDT4 Mandarin text preparation succeed !"
