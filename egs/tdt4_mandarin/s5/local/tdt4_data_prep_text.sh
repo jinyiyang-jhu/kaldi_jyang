@@ -44,7 +44,7 @@ cat $tmpdir/all.trans |\
 awk '{spk=substr($1,1,26);print $1" "spk}' $tmpdir/all.text > $tmpdir/all.utt2spk || exit 1;
 cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.spk2utt || exit 1;
 
-awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=6;++i) uttid=uttid"_"S[i];
+awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=5;++i) uttid=uttid"_"S[i];
   print segments " " uttid " " S[7]/100 " " S[8]/100}' < $tmpdir/all.text > $tmpdir/all.segments
 
 echo "TDT4 Mandarin text preparation succeed !"

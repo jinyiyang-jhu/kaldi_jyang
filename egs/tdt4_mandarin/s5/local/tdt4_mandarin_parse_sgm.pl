@@ -144,6 +144,10 @@ foreach my $file (@files) {
       ;
     } elsif ($line eq "<\/DOC>") {
       if ((@text > 0) && ($doctype)) {
+        if ($end_time <= $start_time){
+          print STDERR "$0: WARNING: File $file has invalid time tag at <DOCNO>
+          $doc_id\n";
+        }
         my $time_tag = get_time_tag($start_time, $end_time);
         $docname = $sgml_file."_".$doc_id."_".$time_tag;
         print "$docname ";
