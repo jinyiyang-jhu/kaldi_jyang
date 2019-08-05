@@ -134,6 +134,10 @@ foreach my $file (@files) {
           $start_time = $current_time - $doc_start_time;
         }
       ;
+    } elsif ($line =~ /<TURN>/){
+        #$line = "__TURN__"; # Replace <TURN> with a word, indicating speaker change
+        push @text, $line;
+      ;
     } elsif($line =~ /<END_TIME>/){
         @times = split /\s+/, $line;
         $end_time = str2time($times[2]) - $doc_start_time;
@@ -160,6 +164,7 @@ foreach my $file (@files) {
       $line = trim $line;
       #$line = encode("utf-8", decode("ISO-8859-1", $line));
       $line = decode("gbk", $line);
+      $line =~ s:〈turn〉:<TURN>:g;
       push @text, $line if $line;
       ;
     }

@@ -16,6 +16,10 @@ while (<STDIN>) {
     $tmp =~ s:Ｄ:D:g;
     $tmp =~ s:Ｎ:D:g;
     $tmp =~ s:Ｗ:W:g;
+    $tmp =~ s:Ｇ:G:g;
+    $tmp =~ s:Ｓ:S:g;
+    $tmp =~ s:Ｔ:T:g;
+    $tmp =~ s:Ｖ:V:g;
     $tmp =~ s:％::g;
     $tmp =~ s:Ⅱ::g;
     $tmp =~ s:＋::g;
@@ -38,6 +42,8 @@ while (<STDIN>) {
     $tmp =~ s:、::g;
     $tmp =~ s:】::g;
     $tmp =~ s:·::g;
+    $tmp =~ s:〉::g;
+    $tmp =~ s:〈::g;
     $tmp =~ s:《::g;
     $tmp =~ s:》::g;
     $tmp =~ s:"::g;
@@ -53,6 +59,10 @@ while (<STDIN>) {
     $tmp =~ s:\?::g;
     $tmp =~ s:-::g;
     $tmp =~ s:@::g;
+    $tmp =~ s:‰::g;
+    $tmp =~ s:—::g;
+    $tmp =~ s:○::g;
+    $tmp =~ s:,::g;
     if ($tmp =~ /[^.]{0,}\.+/) {$tmp =~ s:\.:点:g;}
     if ($tmp =~ /？/) { $tmp =~ s:？::g; }
     if ($tmp =~ /。/) { $tmp =~ s:。::g; }

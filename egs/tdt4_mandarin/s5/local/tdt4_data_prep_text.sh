@@ -39,7 +39,7 @@ cat $tmpdir/all.trans |\
    sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
    local/tdt4_mandarin_normalize.pl |\
    python local/tdt4_mandarin_segment.py |\
-   paste $tmpdir/all.uttid - > $tmpdir/all.text
+   paste $tmpdir/all.uttid - | awk 'NF>1'> $tmpdir/all.text
 
 awk '{spk=substr($1,1,26);print $1" "spk}' $tmpdir/all.text > $tmpdir/all.utt2spk || exit 1;
 cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.spk2utt || exit 1;
@@ -47,4 +47,5 @@ cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.
 awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=5;++i) uttid=uttid"_"S[i];
   print segments " " uttid " " S[7]/100 " " S[8]/100}' < $tmpdir/all.text > $tmpdir/all.segments
 
+awk '{print $1}' $tmpdir/all.text > $tmpdir/all.uttid
 echo "TDT4 Mandarin text preparation succeed !"

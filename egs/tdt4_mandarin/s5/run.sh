@@ -12,6 +12,7 @@ num_jobs=32
 num_jobs_decode=32
 train_nj=32
 decode_nj=4
+extra_text=data/loca/gale_text
 
 AUDIO=/export/corpora/LDC/LDC2005S11
 TEXT=/export/corpora/LDC/LDC2005T16
@@ -25,14 +26,14 @@ if [ $stage -le 0 ]; then
 #########################################################
   local/tdt4_data_prep_audio.sh $AUDIO || exit 1;
   local/tdt4_data_prep_text.sh $TEXT || exit 1;
-  local/tdt4_data_prep_split.sh data/local/ || exit 1;
+  local/tdt4_data_prep_split.sh data/local/ data/ || exit 1;
 fi
 
 if [ $stage -le 1 ]; then
 ########################################################################
 #                       Lexicon preparation
 ########################################################################
-  local/gale_prep_dict.sh || exit 1;
+  local/tdt4_mandarin_prep_dict.sh --extra-text $extra_text|| exit 1;
   utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang data/lang
 fi
 
@@ -41,7 +42,7 @@ if [ $stage -le 2 ]; then
 #                       LM training
 ########################################################################
 # Text is too few to use KN smoothing, using W-B, will add more text from gale_mandarin later
-  local/tdt4_mandarin_train_lms.sh --extra-text data/local/gale_text
+  local/tdt4_mandarin_train_lms.sh --extra-text $extra_text
   local/tdt4_mandarin_format_data.sh
 fi
 
