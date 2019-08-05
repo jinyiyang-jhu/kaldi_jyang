@@ -39,7 +39,8 @@ cat $tmpdir/all.trans |\
    sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
    local/tdt4_mandarin_normalize.pl |\
    python local/tdt4_mandarin_segment.py |\
-   paste $tmpdir/all.uttid - | awk 'NF>1'> $tmpdir/all.text
+   paste $tmpdir/all.uttid - |\
+   awk '{if (NF>2 || (NF==2 && $2 != "<TURN>")) print $0}' > $tmpdir/all.text
 
 awk '{spk=substr($1,1,26);print $1" "spk}' $tmpdir/all.text > $tmpdir/all.utt2spk || exit 1;
 cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.spk2utt || exit 1;
