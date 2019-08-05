@@ -39,6 +39,7 @@ cat $tmpdir/all.trans |\
    sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
    local/tdt4_mandarin_normalize.pl |\
    python local/tdt4_mandarin_segment.py |\
+   sed -e 's/THISISSPKTURN/<TURN>/g' |\
    paste $tmpdir/all.uttid - |\
    awk '{if (NF>2 || (NF==2 && $2 != "<TURN>")) print $0}' > $tmpdir/all.text
 

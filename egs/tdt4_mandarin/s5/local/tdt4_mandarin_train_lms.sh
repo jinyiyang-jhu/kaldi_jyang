@@ -47,7 +47,7 @@ cat $text |\
   local/tdt4_mandarin_normalize.pl |\
   awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } }
   {for(n=2; n<=NF;n++) {  if (seen[$n]) { printf("%s ", $n); } else {printf("<UNK> ");} } printf("\n");}' \
-  > $cleantext || exit 1;
+  sed -e 's/<TURN>//g' > $cleantext || exit 1;
 
 
 cat $cleantext | awk '{for(n=2;n<=NF;n++) print $n; }' | sort | uniq -c | \

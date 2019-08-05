@@ -135,7 +135,7 @@ foreach my $file (@files) {
         }
       ;
     } elsif ($line =~ /<TURN>/){
-        #$line = "__TURN__"; # Replace <TURN> with a word, indicating speaker change
+        $line = "THISISSPKTURN"; # Replace <TURN> with a word, indicating speaker change, will be removed from text before LM training
         push @text, $line;
       ;
     } elsif($line =~ /<END_TIME>/){
@@ -164,7 +164,7 @@ foreach my $file (@files) {
       $line = trim $line;
       #$line = encode("utf-8", decode("ISO-8859-1", $line));
       $line = decode("gbk", $line);
-      $line =~ s:〈turn〉:<TURN>:g;
+      $line =~ s:〈turn〉:THISISSPKTURN:g;
       push @text, $line if $line;
       ;
     }
