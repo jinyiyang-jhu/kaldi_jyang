@@ -165,6 +165,9 @@ foreach my $file (@files) {
       #$line = encode("utf-8", decode("ISO-8859-1", $line));
       $line = decode("gbk", $line);
       $line =~ s:〈turn〉:THISISSPKTURN:g;
+      $line =~ s:<turn>:THISISSPKTURN:g;
+      $line =~ s:turn>:THISISSPKTURN:g;
+      $line =~ s:<turn:THISISSPKTURN:g;
       push @text, $line if $line;
       ;
     }
