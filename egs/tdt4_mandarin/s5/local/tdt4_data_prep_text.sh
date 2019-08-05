@@ -43,8 +43,10 @@ cat $tmpdir/all.trans |\
    paste $tmpdir/all.uttid - |\
    awk '{if (NF>2 || (NF==2 && $2 != "<TURN>")) print $0}' > $tmpdir/all.text
 
-awk '{spk=substr($1,1,26);print $1" "spk}' $tmpdir/all.text > $tmpdir/all.utt2spk || exit 1;
-cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.spk2utt || exit 1;
+#awk '{spk=substr($1,1,26);print $1" "spk}' $tmpdir/all.text > $tmpdir/all.utt2spk || exit 1;
+#cat $tmpdir/all.utt2spk | sort -k 2 | utils/utt2spk_to_spk2utt.pl > $tmpdir/all.spk2utt || exit 1;
+awk '{print $1" "$1}' $tmpdir/all.text > $tmpdir/all.utt2spk
+cp $tmpdir/all.utt2spk > $tmpdir/all.spk2utt
 
 awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=5;++i) uttid=uttid"_"S[i];
   print segments " " uttid " " S[7]/100 " " S[8]/100}' < $tmpdir/all.text > $tmpdir/all.segments

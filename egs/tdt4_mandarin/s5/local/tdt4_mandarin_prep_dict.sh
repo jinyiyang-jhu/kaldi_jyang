@@ -31,13 +31,15 @@ cat $train_dir/text $dev_dir/text | awk '{for (i = 2; i <= NF; i++) print $i}' |
 
 if [ ! -z $extra_text ];then
   echo "Using extra text for LM training, add these words for lexicon: $extra_text"
-  cat $extra_text | awk '{for (i = 2; i <= NF; i++) print $i}' | sort -u |\
+  cat $extra_text | cut -d " " -f2- |\
+    local/tdt4_mandarin_normalize.pl |\
+    awk 'NF>0' > $dict_dir/lm_extra_text || exit 1;
+  awk '{for (i=1; i <= NF; i++) print $i}' $dict_dir/lm_extra_text | sort -u |\
     grep -v '\[LAUGHTER\]' |\
     grep -v '\[NOISE\]' |\
     grep -v '\[VOCALIZED-NOISE\]'|\
-    sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
-    local/tdt4_mandarin_normalize.pl | perl -ape 's/ /\n/g;' |\
-    awk 'NF>0' > $dict_dir/vocab-full-2.txt
+    sed -e 's/((\([^)]\{0,\}\)))/\1/g;' |\
+    perl -ape 's/ /\n/g;' | awk 'NF>0' > $dict_dir/vocab-full-2.txt
     cp $dict_dir/vocab-full.txt $dict_dir/vocab-full-1.txt
     cat $dict_dir/vocab-full-1.txt $dict_dir/vocab-full-2.txt | sort -u > $dict_dir/vocab-full.txt
 fi

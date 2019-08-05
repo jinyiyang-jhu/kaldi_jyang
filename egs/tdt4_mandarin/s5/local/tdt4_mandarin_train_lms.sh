@@ -9,27 +9,27 @@ extra_text=
 
 lexicon=data/local/dict/lexicon.txt
 
+[ ! -f $lexicon ] && echo "$0: No such file $lexicon" && exit 1;
+
+dir=data/local/lm
+mkdir -p $dir
+
+cut -d " " -f2- data/local/train/text | sed -e 's/<TURN>//g' > data/local/lm/lm_text
+
 if [ ! -z $extra_text ];then
     echo "Using extra text for LM training: $extra_text"
-    cat data/local/train/text $extra_text > data/local/lm_text
-else
-    echo "No extra text, using train text for LM"
-    cp data/local/train/text data/local/lm_text
+    mv data/local/lm/lm_text data/local/lm/lm_text_tdt4
+    cat $extra_text data/local/lm/lm_text_tdt4 > data/local/lm/lm_text
+    rm data/local/lm/lm_text_tdt4
 fi
-text=data/local/lm_text
+text=data/local/lm/lm_text
 
-
-for f in "$text" "$lexicon"; do
-  [ ! -f $x ] && echo "$0: No such file $f" && exit 1;
-done
 
 # This script takes no arguments.  It assumes you have already run
 # swbd_p1_data_prep.sh.
 # It takes as input the files
 #data/local/train/text
 #data/local/dict/lexicon.txt
-dir=data/local/lm
-mkdir -p $dir
 
 export LC_ALL=C # You'll get errors about things being not sorted, if you
                 # have a different locale.
@@ -43,11 +43,9 @@ fi
 
 cleantext=$dir/text.no_oov
 
-cat $text |\
-  local/tdt4_mandarin_normalize.pl |\
-  awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } }
-  {for(n=2; n<=NF;n++) {  if (seen[$n]) { printf("%s ", $n); } else {printf("<UNK> ");} } printf("\n");}' |\
-  sed -e 's/<TURN>//g' > $cleantext || exit 1;
+awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } }
+  {for(n=2; n<=NF;n++) {  if (seen[$n]) { printf("%s ", $n); } 
+  else {printf("<UNK> ");} } printf("\n");}' $text > $cleantext || exit 1;
 
 
 cat $cleantext | awk '{for(n=2;n<=NF;n++) print $n; }' | sort | uniq -c | \
