@@ -18,7 +18,7 @@ TESTFILES = determinize-star-test \
       push-special-test epsilon-property-test prune-special-test
 
 OBJFILES = push-special.o kaldi-fst-io.o context-fst.o grammar-context-fst.o
-
+BINFILES = build-bpe-on-demand-fst
 
 LIBNAME = kaldi-fstext
 
