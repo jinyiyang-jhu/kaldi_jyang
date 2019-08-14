@@ -32,8 +32,6 @@ WordLexiconInfo::WordLexiconInfo(const std::vector<std::vector<int32> >&lexicon)
     }
 }
 
-
-
 void WordLexiconInfo::UpdateLexiconMap(const std::vector<int32> &lexicon_entry){
     KALDI_ASSERT(lexicon_entry.size() >= 2);
     std::vector<int32> key;

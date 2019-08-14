@@ -1,8 +1,6 @@
 // fstext/deterministic-fst-bpe.h
 
-// Copyright 2011-2012 Gilles Boulianne
-//                2014 Telepoint Global Hosting Service, LLC. (Author: David Snyder)
-//           2012-2015 Johns Hopkins University (author: Daniel Povey)
+// Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
 
 // See ../../COPYING for clarification regarding multiple authors
 //
@@ -36,8 +34,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Copyright 2005-2010 Google, Inc.
-// Author: riley@google.com (Michael Riley)
 
 #ifndef KALDI_FSTEXT_DETERMINISTIC_FST_H_
 #define KALDI_FSTEXT_DETERMINISTIC_FST_H_
@@ -55,10 +51,7 @@
 
 #include <fst/fstlib.h>
 #include <fst/fst-decl.h>
-
 #include "util/stl-utils.h"
-#include "hmm/transition-model.h"
-#include "fstext/deterministic-fst.h"
 
 namespace kaldi{
 namespace fst {
@@ -78,31 +71,32 @@ namespace fst {
 template<class Arc>
 class BPEDeterministicOnDemandFst:
         public fst::DeterministicOnDemandFst<fst::StdArc> {
- public:
-  typedef fst::StdArc::StateId StateId;
-  typedef fst::StdArc::Weight Weight;
-  typedef fst::StdArc::Label Label;
+    public:
+        typedef fst::StdArc::StateId StateId;
+        typedef fst::StdArc::Weight Weight;
+        typedef fst::StdArc::Label Label;
 
-  //It takes in the word-to-bpe vocabulary, and stop words list.
-  BPEDeterministicOnDemandFst(LexiconMap *lexicon, BpeStopSymbols *bpe_stops);
-  virtual StateId Start() { return start_state_; }
-  virtual Weight Final(StateId s);
-  virtual bool GetArc(StateId s, Label ilabel, fst::StdArc *oarc);
+        //It takes in the word-to-bpe vocabulary, and stop words list.
+        BPEDeterministicOnDemandFst(LexiconMap *lexicon, BpeStopSymbols *bpe_stops);
+        virtual StateId Start();
+        virtual Weight Final(StateId s);
+        virtual bool GetArc(StateId s, Label ilabel, Arc *oarc);
 
- private:
-  typedef std::unordered_map<std::vector<Label>, StateId, VectorHasher<Label> > MapType;
-  typedef std::unordered_map<std::vector<Label>, Label, VectorHasher<Label> > LexiconMap;
-  typedef std::unordered_set<Label> BpeStopSymbols;
+    private:
+        typedef std::unordered_map<std::vector<Label>, StateId, VectorHasher<Label> > MapType;
+        typedef std::unordered_map<std::vector<Label>, Label, VectorHasher<Label> > LexiconMap;
+        typedef std::unordered_set<Label> BpeStopSymbols;
 
-  LexiconMap *lexicon_map_;    // Unordered map from vector of bpe symbols (ints) to corresponding word (int)
-  BpeStopSymbols *bpe_stops_; // Unordered map storing bpe symbols (ints) that can end words (without @@ at the end)
-  StateId start_state_  // Fst start state
-  //int max_len_; // Place to store the max length of input bpe sequence, if it
-                //is beyond this length without matching word, clear the context and output oov-symbol;
-  MapType bseq_to_state_;   // Stores BPE sequence to state map
-  // Map from history-state to pair.
-  std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
-  std::vector<std::vector<Label> > state_to_context_; // Store the history of the current state
+        LexiconMap *lexicon_map_;    // Unordered map from vector of bpe symbols (ints) to corresponding word (int)
+        BpeStopSymbols *bpe_stops_; // Unordered map storing bpe symbols (ints) that can end words (without @@ at the end)
+        StateId start_state_  // Fst start/end state 
+
+        // Panda suspicious code...           
+        MapType bseq_to_state_;   // Stores BPE sequence to state map
+        std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
+        //std::vector<std::vector<Label> > state_to_context_; // Store the history of the current state
+        //int max_len_; // Place to store the max length of input bpe sequence, if it
+                    //is beyond this length without matching word, clear the context and output oov-symbol;
 };
 } //namespace fst
 } //namespace kaldi
