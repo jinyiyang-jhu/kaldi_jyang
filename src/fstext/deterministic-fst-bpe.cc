@@ -39,7 +39,7 @@
 
 namespace kaldi{
 namespace fst {
-
+using fst::BPEDeterministicOnDemandFst;
 /// \addtogroup deterministic_fst_group "Classes and functions related to on-demand deterministic FST's"
 /// @{
 
@@ -51,9 +51,8 @@ namespace fst {
 /// "const" in this interface, because it creates problems when we do things
 /// like caching.
 
-BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon,
-                                                     StopWords *bpe_stops) {
-  lexicon_map_ = lexicon;
+BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols *bpe_stops) {
+  lexicon_map_ = lexicon_map;
   bpe_stops_ = bpe_stops;
   start_state_ = 0;
   std::vector<Label> bos;
@@ -61,11 +60,11 @@ BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon,
   state_to_bseq_.push_back(bos);
 }
 
-void BPEDeterministicOnDemandFst<Arc>::Start() {
+StateId BPEDeterministicOnDemandFst<StdArc>::Start() {
   return start_state_; //equivalent to "return this->start_state_;"
 }
 
-Weight BPEDeterministicOnDemandFst<Arc>::Final(StateId s) {
+Weight BPEDeterministicOnDemandFst<StdArc>::Final(StateId s) {
   // Final 
   typedef MapType::iterator IterType;
   std::vector<Label> bseq = state_to_bseq_[s];
@@ -84,7 +83,7 @@ BPEDeterministicOnDemandFst::~BPEDeterministicOnDemandFst() {
   }
 }
 
-void TfRnnlmDeterministicFst::Clear() {
+void BPEDeterministicOnDemandFst::Clear() {
   // similar to the destructor but we retain the 0-th entries in each map
   // which corresponds to the <bos> state
   for (int i = 1; i < state_to_bseq_.size(); i++) {
@@ -96,7 +95,7 @@ void TfRnnlmDeterministicFst::Clear() {
 }
 
 
-bool BPEDeterministicOnDemandFst<Arc>::GetArc(StateId s, Label ilabel, Arc *oarc) {
+bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) {
   std::vector<Label> bseq = state_to_bseq_[s].push_back(ilabel);
   std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_bseq_.size()));
   typedef MapType::iterator IterType;

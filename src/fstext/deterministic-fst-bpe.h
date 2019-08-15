@@ -54,13 +54,12 @@
 #include "util/stl-utils.h"
 #include "fstext/deterministic-fst.h"
 
-namespace fst{
-template<class Arc>
-class BPEDeterministicOnDemandFst: public fst::DeterministicOnDemandFst<Arc> {
+namespace fst {
+class BPEDeterministicOnDemandFst: public DeterministicOnDemandFst<StdArc> {
   private:
-    typedef typename Arc::Weight Weight;
-    typedef typename Arc::StateId StateId;
-    typedef typename Arc::Label Label;
+    typedef typename StdArc::Weight Weight;
+    typedef typename StdArc::StateId StateId;
+    typedef typename StdArc::Label Label;
     typedef std::unordered_map<std::vector<Label>, StateId, kaldi::VectorHasher<Label> > MapType;
     typedef std::unordered_map<std::vector<Label>, Label, kaldi::VectorHasher<Label> > LexiconMap;
     typedef std::unordered_set<Label> BpeStopSymbols;
@@ -77,9 +76,11 @@ class BPEDeterministicOnDemandFst: public fst::DeterministicOnDemandFst<Arc> {
   public:
     //It takes in the word-to-bpe vocabulary, and stop words list.
     BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols *bpe_stops);
+    ~BPEDeterministicOnDemandFst();
+    void Clear();
     virtual StateId Start();
     virtual Weight Final(StateId s);
-    virtual bool GetArc(StateId s, Label ilabel, Arc *oarc);
+    virtual bool GetArc(StateId s, Label ilabel, StdArc *oarc);
 };
 } // namespace fst
 #endif
