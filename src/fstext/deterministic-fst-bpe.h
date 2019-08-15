@@ -1,8 +1,6 @@
 // fstext/deterministic-fst-bpe.h
 
-// Copyright 2011-2012 Gilles Boulianne
-//                2014 Telepoint Global Hosting Service, LLC. (Author: David Snyder)
-//           2012-2015 Johns Hopkins University (author: Daniel Povey)
+// Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
 
 // See ../../COPYING for clarification regarding multiple authors
 //
@@ -36,11 +34,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Copyright 2005-2010 Google, Inc.
-// Author: riley@google.com (Michael Riley)
 
-#ifndef KALDI_FSTEXT_DETERMINISTIC_FST_H_
-#define KALDI_FSTEXT_DETERMINISTIC_FST_H_
+#ifndef KALDI_FSTEXT_DETERMINISTIC_FST_BPE_H_
+#define KALDI_FSTEXT_DETERMINISTIC_FST_BPE_H_
 
 /* This header defines the DeterministicOnDemand interface,
    which is an FST with a special interface that allows
@@ -55,54 +51,35 @@
 
 #include <fst/fstlib.h>
 #include <fst/fst-decl.h>
-
 #include "util/stl-utils.h"
-#include "hmm/transition-model.h"
 #include "fstext/deterministic-fst.h"
 
-namespace kaldi{
-namespace fst {
-
-/// \addtogroup deterministic_fst_group "Classes and functions related to on-demand deterministic FST's"
-/// @{
-
-/// class DeterministicOnDemandFst is an "FST-like" base-class.  It does not
-/// actually inherit from any Fst class because its interface is not exactly the
-/// same; it's much smaller.  It assumes that the FST can have only one arc for
-/// any given input symbol, which makes the GetArc function below possible.
-/// (The FST is also assumed to be free of input epsilons).  Note: we don't use
-/// "const" in this interface, because it creates problems when we do things
-/// like caching.
-
-
+namespace fst{
 template<class Arc>
-class BPEDeterministicOnDemandFst:
-        public fst::DeterministicOnDemandFst<fst::StdArc> {
- public:
-  typedef fst::StdArc::StateId StateId;
-  typedef fst::StdArc::Weight Weight;
-  typedef fst::StdArc::Label Label;
+class BPEDeterministicOnDemandFst: public fst::DeterministicOnDemandFst<Arc> {
+  private:
+    typedef typename Arc::Weight Weight;
+    typedef typename Arc::StateId StateId;
+    typedef typename Arc::Label Label;
+    typedef std::unordered_map<std::vector<Label>, StateId, kaldi::VectorHasher<Label> > MapType;
+    typedef std::unordered_map<std::vector<Label>, Label, kaldi::VectorHasher<Label> > LexiconMap;
+    typedef std::unordered_set<Label> BpeStopSymbols;
 
-  //It takes in the word-to-bpe vocabulary, and stop words list.
-  BPEDeterministicOnDemandFst(LexiconMap *lexicon, BpeStopSymbols *bpe_stops);
-  virtual StateId Start() { return start_state_; }
-  virtual Weight Final(StateId s);
-  virtual bool GetArc(StateId s, Label ilabel, fst::StdArc *oarc);
+    LexiconMap *lexicon_map_;    // Unordered map from vector of bpe symbols (ints) to corresponding word (int)
+    BpeStopSymbols *bpe_stops_; // Unordered map storing bpe symbols (ints) that can end words (without @@ at the end)
+    StateId start_state_;  // Fst start/end state
 
- private:
-  typedef std::unordered_map<std::vector<Label>, StateId, VectorHasher<Label> > MapType;
-  typedef std::unordered_map<std::vector<Label>, Label, VectorHasher<Label> > LexiconMap;
-  typedef std::unordered_set<Label> BpeStopSymbols;
-
-  LexiconMap *lexicon_map_;    // Unordered map from vector of bpe symbols (ints) to corresponding word (int)
-  BpeStopSymbols *bpe_stops_; // Unordered map storing bpe symbols (ints) that can end words (without @@ at the end)
-  StateId start_state_  // Fst start state
-  //int max_len_; // Place to store the max length of input bpe sequence, if it
-                //is beyond this length without matching word, clear the context and output oov-symbol;
-  MapType bseq_to_state_;   // Stores BPE sequence to state map
-  // Map from history-state to pair.
-  std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
-  std::vector<std::vector<Label> > state_to_context_; // Store the history of the current state
+    // Panda suspicious code...
+    MapType bseq_to_state_;   // Stores BPE sequence to state map
+    std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
+        //int max_len_; // Place to store the max length of input bpe sequence, if it
+                    //is beyond this length without matching word, clear the context and output oov-symbol;
+  public:
+    //It takes in the word-to-bpe vocabulary, and stop words list.
+    BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols *bpe_stops);
+    virtual StateId Start();
+    virtual Weight Final(StateId s);
+    virtual bool GetArc(StateId s, Label ilabel, Arc *oarc);
 };
-} //namespace fst
-} //namespace kaldi
+} // namespace fst
+#endif

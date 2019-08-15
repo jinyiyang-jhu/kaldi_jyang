@@ -2,7 +2,7 @@
 
 // Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
 
-// See ../../COPYING for clarification regarding multiple authors
+
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 // This file includes material from the OpenFST Library v1.2.7 available at
 // http://www.openfst.org and released under the Apache License Version 2.0.
 //
-// See ../../COPYING for clarification regarding multiple authors
+
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,30 +33,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Copyright 2005-2010 Google, Inc.
-// Author: riley@google.com (Michael Riley)
 
-#ifndef KALDI_FSTEXT_DETERMINISTIC_FST_H_
-#define KALDI_FSTEXT_DETERMINISTIC_FST_H_
 
-/* This header defines the DeterministicOnDemand interface,
-   which is an FST with a special interface that allows
-   only a single arc with a non-epsilon input symbol
-   out of each state.
-*/
-
-#include <algorithm>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include <fst/fstlib.h>
-#include <fst/fst-decl.h>
-
-#include "util/stl-utils.h"
-#include "hmm/transition-model.h"
-#include "fstext/deterministic-fst.h"
 #include "fstext/deterministic-fst-bpe.h"
 
 namespace kaldi{
@@ -82,31 +60,62 @@ BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon,
   bseq_to_state_[bos] = 0;
   state_to_bseq_.push_back(bos);
 }
- public:
-  typedef fst::StdArc::StateId StateId;
-  typedef fst::StdArc::Weight Weight;
-  typedef fst::StdArc::Label Label;
 
-  //It takes in the word-to-bpe vocabulary, and stop words list.
-  BPEDeterministicOnDemandFst(LexiconMap *lexicon, StopWords *stop_words);
-  virtual StateId Start() { return start_state_; }
-  virtual Weight Final(StateId s);
-  virtual bool GetArc(StateId s, Label ilabel, fst::StdArc *oarc);
+void BPEDeterministicOnDemandFst<Arc>::Start() {
+  return start_state_; //equivalent to "return this->start_state_;"
+}
 
- private:
-  typedef std::unordered_map<std::vector<Label>, StateId, VectorHasher<Label> > MapType;
-  typedef std::unordered_map<std::vector<Label>, Label, VectorHasher<Label> > LexiconMap;
-  typedef std::unordered_set<Label> BpeStopSymbols;
+Weight BPEDeterministicOnDemandFst<Arc>::Final(StateId s) {
+  // Final 
+  typedef MapType::iterator IterType;
+  std::vector<Label> bseq = state_to_bseq_[s];
+  BaseFloat logprob;
+  if (bpe_stops_->find(bseq.back())) {// Last bpe piece is in stop bpe list
+    logprob = 1;
+  } else {
+    logprob = -16.118; // Fixed number ???
+  }
+  return Weight(-logprob);
+}
 
-  MapType bseq_to_state_;   // Stores BPE sequence to state map
-  LexiconMap *lexicon_map_;    // Unordered map from vector of bpe symbols (ints) to corresponding word (int)
-  BpeStopSymbols *bpe_stops_; // Unordered map storing bpe symbols (ints) that can end words (without @@ at the end)
-  StateId start_state_ = 0; // Fst start state
-  //int max_len_; // Place to store the max length of input bpe sequence, if it
-                //is beyond this length without matching word, clear the context and output oov-symbol;
+BPEDeterministicOnDemandFst::~BPEDeterministicOnDemandFst() {
+  for (int i = 0; i < state_to_bseq_.size(); i++) {
+    delete state_to_bseq_[i];
+  }
+}
 
-  // Map from history-state to pair.
-  std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
-};
+void TfRnnlmDeterministicFst::Clear() {
+  // similar to the destructor but we retain the 0-th entries in each map
+  // which corresponds to the <bos> state
+  for (int i = 1; i < state_to_bseq_.size(); i++) {
+    delete state_to_bseq_[i];
+  }
+  state_to_bseq_.resize(1);
+  bseq_to_state_.clear();
+  bseq_to_state_[state_to_bseq_[0]] = 0;
+}
+
+
+bool BPEDeterministicOnDemandFst<Arc>::GetArc(StateId s, Label ilabel, Arc *oarc) {
+  std::vector<Label> bseq = state_to_bseq_[s].push_back(ilabel);
+  std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_bseq_.size()));
+  typedef MapType::iterator IterType;
+  std::pari<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
+  // Check if this bseq is already related to a state. If not, push back this new bseq.
+  if (result.second == true) {
+    state_to_bseq_.push_back(bseq);
+  } 
+
+  // Create the oarc
+  oarc->ilabel = ilabel
+  if (bpe_stops_->find(ilabel)) {
+    oarc->olabel = lexicon_map_->find(bseq);
+    state_to_bseq_
+  } else{
+    oarc->olabel = 0;
+    oarc->nextstate = result.first->second;
+  }
+  oarc->weight = Weight::One();
+}
 } //namespace fst
 } //namespace kaldi
