@@ -1,11 +1,11 @@
-// fstext/build-bpe-on-demand-fst.cc
+// bpe/build-bpe-on-demand-fst.cc
 
 #include "base/kaldi-common.h"
 #include "util/common-utils.h"
 #include "lat/kaldi-lattice.h"
 //#include "lat/word-align-lattice-lexicon.h"
 #include "lat/lattice-functions.h"
-#include "fstext/deterministic-fst-bpe.h"
+#include "bpe/deterministic-fst-bpe.h"
 
 namespace kaldi {
 const int kTemporaryEpsilon = -2;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
        KALDI_ERR << "Error reading bpe stop word list from "
                  << bpe_stops_rxfilename;
     }
-    BPEStopWordsInfo bpe_stop_words_info(bpe_stop_list);
+    fst::BPEStopWordsInfo<StdArc> bpe_stop_words_info(bpe_stop_list);
     bpe_stop_words_info.PrintBPEStopWords();
 
     SequentialCompactLatticeReader compact_lattice_reader(lats_rspecifier);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
       std::string key = compact_lattice_reader.Key();
       CompactLattice &clat = compact_lattice_reader.Value();
       ArcSort(&clat, fst::OLabelCompare<CompactLatticeArc>());
-      fst::BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer);
+      BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer);
       CompactLattice composed_clat;
       ComposeCompactLatticeDeterministic(clat, &bpe_lex_fst, &composed_clat);
 

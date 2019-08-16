@@ -35,7 +35,7 @@
 // limitations under the License.
 
 
-#include "fstext/deterministic-fst-bpe.h"
+#include "bpe/deterministic-fst-bpe.h"
 
 namespace kaldi{
 namespace fst {
