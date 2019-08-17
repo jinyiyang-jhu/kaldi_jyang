@@ -26,10 +26,8 @@ class WordLexiconInfo {
         std::cout << "Value is " << pair.second << "\n";
       }
   }
-  bool ReturnLexiconMap(LexiconMap *lexicon_pointer){
-    lexicon_pointer = &lexicon_map_;
-    //KALDI_WARN << "Lexicon pointer is " << lexicon_pointer;
-    return (!lexicon_pointer->empty());
+  LexiconMap* ReturnLexiconMapPointer(){
+    return (&lexicon_map_);
   }
 };
 
@@ -72,10 +70,9 @@ class BPEStopWordsInfo {
         std::cout << "Value is " << (*itr) << "\n";
       }
     }
-    bool ReturnStopWordsSet(BPEStopSet *bpe_stop_pointer){
-      bpe_stop_pointer = &bpe_stop_sets_;
-      //KALDI_WARN << "BPE stop pointer is " << bpe_stop_pointer;
-      return (!bpe_stop_pointer->empty());
+    BPEStopSet* ReturnStopWordsSetPointer(){
+    KALDI_WARN << "Inside set address is " << &bpe_stop_sets_;
+      return (&bpe_stop_sets_);
     }
 };
 
@@ -156,7 +153,7 @@ int main(int argc, char *argv[]) {
                  << lexicon_rxfilename;
     }
     WordLexiconInfo lexicon_info(lexicon);
-    lexicon_info.PrintLexicon();
+    //lexicon_info.PrintLexicon();
 
     // Read BPE stop words list
     Input ki2(bpe_stops_rxfilename, &binary_in2);
@@ -165,19 +162,24 @@ int main(int argc, char *argv[]) {
        KALDI_ERR << "Error reading bpe stop word list from "
                  << bpe_stops_rxfilename;
     }
-    fst::BPEStopWordsInfo<StdArc> bpe_stop_words_info(bpe_stop_list);
-    bpe_stop_words_info.PrintBPEStopWords();
+    BPEStopWordsInfo bpe_stop_words_info(bpe_stop_list);
+    //bpe_stop_words_info.PrintBPEStopWords();
 
     SequentialCompactLatticeReader compact_lattice_reader(lats_rspecifier);
     CompactLatticeWriter compact_lattice_writer(lats_wspecifier);
 
     typedef std::unordered_map<std::vector<fst::StdArc::Label>, fst::StdArc::Label, VectorHasher<fst::StdArc::Label> > LexiconMap;
     typedef std::unordered_set<fst::StdArc::Label> BPEStopSet;
-    LexiconMap *lexicon_pointer;
-    BPEStopSet *bpe_stop_pointer;
-    if ( ! lexicon_info.ReturnLexiconMap(lexicon_pointer) || !bpe_stop_words_info.ReturnStopWordsSet(bpe_stop_pointer) ){
-      KALDI_WARN << "Lexicon or bpe symbol pointer is empty !";
-    }
+    LexiconMap *lexicon_pointer = lexicon_info.ReturnLexiconMapPointer();
+    BPEStopSet *bpe_stop_pointer = bpe_stop_words_info.ReturnStopWordsSetPointer();
+    //BPEStopSet::iterator it;
+    //LexiconMap::iterator it2;
+    //for (it2=lexicon_pointer->begin();it2!=lexicon_pointer->end();++it2){
+    //   KALDI_WARN << it2->second;
+    //}
+    //for (it=bpe_stop_pointer->begin();it!=bpe_stop_pointer->end();++it){
+    //   KALDI_WARN << it->first;
+    //}
 
     // Begin to build BPEOnDemandFst
 		int32 n_done = 0, n_fail = 0;
@@ -194,7 +196,7 @@ int main(int argc, char *argv[]) {
       ConvertLattice(composed_clat, &composed_lat);
       Invert(&composed_lat);
       CompactLattice determinized_clat;
-			DeterminizeLattice(composed_lat, &determinized_clat);
+		  DeterminizeLattice(composed_lat, &determinized_clat);
       if (determinized_clat.Start() == fst::kNoStateId) {
         KALDI_WARN << "Empty lattice for utterance " << key;
         n_fail++;
