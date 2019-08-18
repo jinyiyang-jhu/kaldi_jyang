@@ -68,7 +68,7 @@ StdArc::Weight BPEDeterministicOnDemandFst::Final(StateId s) {
   typedef MapType::iterator IterType;
   std::vector<Label> bseq = state_to_bseq_[s];
   kaldi::BaseFloat logprob;
-  if (bpe_stops_->find(bseq.back())) {// Last bpe piece is in stop bpe list
+  if (bpe_stops_->find(bseq.back()) != bpe_stops_->end()) {// Last bpe piece is in stop bpe list
     logprob = 1;
   } else {
     logprob = -16.118; // Fixed number ???
@@ -76,18 +76,18 @@ StdArc::Weight BPEDeterministicOnDemandFst::Final(StateId s) {
   return Weight(-logprob);
 }
 
-BPEDeterministicOnDemandFst::~BPEDeterministicOnDemandFst() {
-  for (int i = 0; i < state_to_bseq_.size(); i++) {
-    delete state_to_bseq_[i];
-  }
-}
+//BPEDeterministicOnDemandFst::~BPEDeterministicOnDemandFst() {
+  //for (int i = 0; i < state_to_bseq_.size(); i++) {
+  //  delete state_to_bseq_[i];
+//  }
+//}
 
 void BPEDeterministicOnDemandFst::Clear() {
   // similar to the destructor but we retain the 0-th entries in each map
   // which corresponds to the <bos> state
-  for (int i = 1; i < state_to_bseq_.size(); i++) {
-    delete state_to_bseq_[i];
-  }
+  //for (int i = 1; i < state_to_bseq_.size(); i++) {
+  //  delete state_to_bseq_[i];
+  //}
   state_to_bseq_.resize(1);
   bseq_to_state_.clear();
   bseq_to_state_[state_to_bseq_[0]] = 0;
@@ -95,7 +95,8 @@ void BPEDeterministicOnDemandFst::Clear() {
 
 
 bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) {
-  std::vector<Label> bseq = state_to_bseq_[s].push_back(ilabel);
+  state_to_bseq_[s].push_back(ilabel);
+  std::vector<Label> bseq = state_to_bseq_[s];
   std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_bseq_.size()));
   typedef MapType::iterator IterType;
   std::pair<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
@@ -106,8 +107,10 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
 
   // Create the oarc
   oarc->ilabel = ilabel;
-  if (bpe_stops_->find(ilabel)) {
-    oarc->olabel = lexicon_map_->find(bseq);
+  if (bpe_stops_->find(ilabel) != bpe_stops_->end()) {
+    Label olabel = lexicon_map_->find(bseq);
+    oarc->olabel = olabel;
+    //oarc->olabel = lexicon_map_->find(bseq);
     //state_to_bseq_
   } else{
     oarc->olabel = 0;
