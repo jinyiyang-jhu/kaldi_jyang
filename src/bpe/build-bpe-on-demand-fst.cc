@@ -172,16 +172,16 @@ int main(int argc, char *argv[]) {
     typedef std::unordered_set<fst::StdArc::Label> BPEStopSet;
     LexiconMap *lexicon_pointer = lexicon_info.ReturnLexiconMapPointer();
     BPEStopSet *bpe_stop_pointer = bpe_stop_words_info.ReturnStopWordsSetPointer();
-    //BPEStopSet::iterator it;
-    //LexiconMap::iterator it2;
-    //for (it2=lexicon_pointer->begin();it2!=lexicon_pointer->end();++it2){
-    //   KALDI_WARN << it2->second;
-    //}
-    //for (it=bpe_stop_pointer->begin();it!=bpe_stop_pointer->end();++it){
-    //   KALDI_WARN << it->first;
-    //}
+   // BPEStopSet::iterator it;
+   // LexiconMap::iterator it2;
+   // for (it2=lexicon_pointer->begin();it2!=lexicon_pointer->end();++it2){
+   //    KALDI_WARN << it2->second;
+   // }
+   // for (it=bpe_stop_pointer->begin();it!=bpe_stop_pointer->end();++it){
+   //    KALDI_WARN << it->first;
+   // }
 
-    // Begin to build BPEOnDemandFst
+   //  Begin to build BPEOnDemandFst
 		int32 n_done = 0, n_fail = 0;
     for (; !compact_lattice_reader.Done(); compact_lattice_reader.Next()) {
       std::string key = compact_lattice_reader.Key();

@@ -37,7 +37,6 @@
 
 #include "bpe/deterministic-fst-bpe.h"
 
-namespace kaldi{
 namespace fst {
 using fst::BPEDeterministicOnDemandFst;
 /// \addtogroup deterministic_fst_group "Classes and functions related to on-demand deterministic FST's"
@@ -60,15 +59,15 @@ BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon_map
   state_to_bseq_.push_back(bos);
 }
 
-StateId BPEDeterministicOnDemandFst<StdArc>::Start() {
+StdArc::StateId BPEDeterministicOnDemandFst::Start() {
   return start_state_; //equivalent to "return this->start_state_;"
 }
 
-Weight BPEDeterministicOnDemandFst<StdArc>::Final(StateId s) {
+StdArc::Weight BPEDeterministicOnDemandFst::Final(StateId s) {
   // Final 
   typedef MapType::iterator IterType;
   std::vector<Label> bseq = state_to_bseq_[s];
-  BaseFloat logprob;
+  kaldi::BaseFloat logprob;
   if (bpe_stops_->find(bseq.back())) {// Last bpe piece is in stop bpe list
     logprob = 1;
   } else {
@@ -99,17 +98,17 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
   std::vector<Label> bseq = state_to_bseq_[s].push_back(ilabel);
   std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_bseq_.size()));
   typedef MapType::iterator IterType;
-  std::pari<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
+  std::pair<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
   // Check if this bseq is already related to a state. If not, push back this new bseq.
   if (result.second == true) {
     state_to_bseq_.push_back(bseq);
   } 
 
   // Create the oarc
-  oarc->ilabel = ilabel
+  oarc->ilabel = ilabel;
   if (bpe_stops_->find(ilabel)) {
     oarc->olabel = lexicon_map_->find(bseq);
-    state_to_bseq_
+    //state_to_bseq_
   } else{
     oarc->olabel = 0;
     oarc->nextstate = result.first->second;
@@ -117,4 +116,4 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
   oarc->weight = Weight::One();
 }
 } //namespace fst
-} //namespace kaldi
+//} //namespace kaldi

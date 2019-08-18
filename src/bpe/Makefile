@@ -9,8 +9,8 @@ all:
 EXTRA_CXXFLAGS = -Wno-sign-compare
 
 include ../kaldi.mk
-
-#BINFILES = build-bpe-on-demand-fst
+OBJFILES =  deterministic-fst-bpe.o
+BINFILES = build-bpe-on-demand-fst
 
 LIBNAME = kaldi-bpe
 
