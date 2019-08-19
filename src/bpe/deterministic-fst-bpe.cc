@@ -34,25 +34,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include "base/kaldi-common.h"
 #include "bpe/deterministic-fst-bpe.h"
 
 namespace fst {
-using fst::BPEDeterministicOnDemandFst;
-/// \addtogroup deterministic_fst_group "Classes and functions related to on-demand deterministic FST's"
-/// @{
+//using fst::BPEDeterministicOnDemandFst;
 
-/// class DeterministicOnDemandFst is an "FST-like" base-class.  It does not
-/// actually inherit from any Fst class because its interface is not exactly the
-/// same; it's much smaller.  It assumes that the FST can have only one arc for
-/// any given input symbol, which makes the GetArc function below possible.
-/// (The FST is also assumed to be free of input epsilons).  Note: we don't use
-/// "const" in this interface, because it creates problems when we do things
-/// like caching.
-
-BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols *bpe_stops) {
+BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols *bpe_stops, Label unk_int) {
   lexicon_map_ = lexicon_map;
   bpe_stops_ = bpe_stops;
+  unk_int_ = unk_int;
   start_state_ = 0;
   std::vector<Label> bos;
   bseq_to_state_[bos] = 0;
@@ -85,16 +76,14 @@ StdArc::Weight BPEDeterministicOnDemandFst::Final(StateId s) {
 void BPEDeterministicOnDemandFst::Clear() {
   // similar to the destructor but we retain the 0-th entries in each map
   // which corresponds to the <bos> state
-  //for (int i = 1; i < state_to_bseq_.size(); i++) {
-  //  delete state_to_bseq_[i];
-  //}
   state_to_bseq_.resize(1);
   bseq_to_state_.clear();
   bseq_to_state_[state_to_bseq_[0]] = 0;
 }
 
-
 bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) {
+  KALDI_LOG << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
+  KALDI_LOG << "GetArc: (StateId, Inlabel) = (" << s << ",  " <<ilabel << ")";
   state_to_bseq_[s].push_back(ilabel);
   std::vector<Label> bseq = state_to_bseq_[s];
   std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_bseq_.size()));
@@ -102,14 +91,25 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
   std::pair<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
   // Check if this bseq is already related to a state. If not, push back this new bseq.
   if (result.second == true) {
+    std::string bseq_temporary;
+    for (auto const &piece: bseq) {bseq_temporary += piece;}
+    KALDI_LOG << "New bseq: " << bseq_temporary << " " << bseq[0];
     state_to_bseq_.push_back(bseq);
   } 
 
   // Create the oarc
   oarc->ilabel = ilabel;
   if (bpe_stops_->find(ilabel) != bpe_stops_->end()) {
-    Label olabel = lexicon_map_->find(bseq);
-    oarc->olabel = olabel;
+    KALDI_LOG << "Found bpe stop sym: " << ilabel;
+    LexiconMap::iterator it = lexicon_map_->find(bseq);
+    if (it != lexicon_map_->end()){
+      KALDI_LOG << "Found a valid word : " << it->second;
+      //Label olabel = it->second;
+      oarc->olabel = it->second;
+    } else{
+      KALDI_LOG  << "Found a OOV !";
+      oarc->olabel = unk_int_;
+    }
     //oarc->olabel = lexicon_map_->find(bseq);
     //state_to_bseq_
   } else{
@@ -117,6 +117,6 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
     oarc->nextstate = result.first->second;
   }
   oarc->weight = Weight::One();
+  return true;
 }
 } //namespace fst
-//} //namespace kaldi

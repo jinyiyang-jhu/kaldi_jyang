@@ -71,12 +71,13 @@ class BPEDeterministicOnDemandFst: public DeterministicOnDemandFst<StdArc> {
     // Panda suspicious code...
     MapType bseq_to_state_;   // Stores BPE sequence to state map
     std::vector<std::vector<Label> > state_to_bseq_; // Store the BPE sequence symbol corresponding to an FST state
+    Label unk_int_;
         //int max_len_; // Place to store the max length of input bpe sequence, if it
                     //is beyond this length without matching word, clear the context and output oov-symbol;
   public:
     //It takes in the word-to-bpe vocabulary, and stop words list.
-    BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols *bpe_stops);
-    ~BPEDeterministicOnDemandFst();
+    BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols*bpe_stops, Label unk_int);
+    virtual ~BPEDeterministicOnDemandFst() {};
     void Clear();
     virtual StateId Start();
     virtual Weight Final(StateId s);

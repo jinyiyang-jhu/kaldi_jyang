@@ -3,7 +3,6 @@
 #include "base/kaldi-common.h"
 #include "util/common-utils.h"
 #include "lat/kaldi-lattice.h"
-//#include "lat/word-align-lattice-lexicon.h"
 #include "lat/lattice-functions.h"
 #include "bpe/deterministic-fst-bpe.h"
 
@@ -71,7 +70,6 @@ class BPEStopWordsInfo {
       }
     }
     BPEStopSet* ReturnStopWordsSetPointer(){
-    KALDI_WARN << "Inside set address is " << &bpe_stop_sets_;
       return (&bpe_stop_sets_);
     }
 };
@@ -123,7 +121,7 @@ int main(int argc, char *argv[]) {
     const char *usage =
         "Convert BPE lattice to word lattice, by building a BPE OnDemandFst\n"
 				"with BPE lattice and lexicon, then compose this FST with given lattice.\n"
-        "Usage: build-bpe-on-demand-fst [options] <lexicon> \\\n"
+        "Usage: build-bpe-on-demand-fst --unk-int=99999 <lexicon> \\\n"
 				"<lattice-rspecifier> <lattice-wspecifier>\n"
         " e.g.: build-bpe-on-demand-fst "
         "    data/local/dict_bpe/lexicon.int data/lang/bpe_stop_sym.txt ark:in.lats ark:out.lats \\\n";
@@ -131,7 +129,9 @@ int main(int argc, char *argv[]) {
     using namespace fst;
     using fst::BPEDeterministicOnDemandFst;
     using kaldi::int32;
+    StdArc::Label unk_int=-1;
     ParseOptions po(usage);
+    po.Register("unk-int", &unk_int, "OOV word int label.");
     po.Read(argc, argv);
     if (po.NumArgs() != 4) {
       po.PrintUsage();
@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
                  << bpe_stops_rxfilename;
     }
     BPEStopWordsInfo bpe_stop_words_info(bpe_stop_list);
-    //bpe_stop_words_info.PrintBPEStopWords();
 
     SequentialCompactLatticeReader compact_lattice_reader(lats_rspecifier);
     CompactLatticeWriter compact_lattice_writer(lats_wspecifier);
@@ -172,22 +171,15 @@ int main(int argc, char *argv[]) {
     typedef std::unordered_set<fst::StdArc::Label> BPEStopSet;
     LexiconMap *lexicon_pointer = lexicon_info.ReturnLexiconMapPointer();
     BPEStopSet *bpe_stop_pointer = bpe_stop_words_info.ReturnStopWordsSetPointer();
-   // BPEStopSet::iterator it;
-   // LexiconMap::iterator it2;
-   // for (it2=lexicon_pointer->begin();it2!=lexicon_pointer->end();++it2){
-   //    KALDI_WARN << it2->second;
-   // }
-   // for (it=bpe_stop_pointer->begin();it!=bpe_stop_pointer->end();++it){
-   //    KALDI_WARN << it->first;
-   // }
 
    //  Begin to build BPEOnDemandFst
 		int32 n_done = 0, n_fail = 0;
     for (; !compact_lattice_reader.Done(); compact_lattice_reader.Next()) {
       std::string key = compact_lattice_reader.Key();
+      KALDI_LOG << "Utterance id is " << key;
       CompactLattice &clat = compact_lattice_reader.Value();
       ArcSort(&clat, fst::OLabelCompare<CompactLatticeArc>());
-      BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer);
+      BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer, unk_int);
       CompactLattice composed_clat;
       ComposeCompactLatticeDeterministic(clat, &bpe_lex_fst, &composed_clat);
 
