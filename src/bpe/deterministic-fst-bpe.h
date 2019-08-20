@@ -82,6 +82,12 @@ class BPEDeterministicOnDemandFst: public DeterministicOnDemandFst<StdArc> {
     virtual StateId Start();
     virtual Weight Final(StateId s);
     virtual bool GetArc(StateId s, Label ilabel, StdArc *oarc);
+    void PrintInfo(){
+      LexiconMap::iterator it = lexicon_map_->begin();
+      for (;it !=lexicon_map_->end(); ++it) {
+        std::cout << "Lexicon value is " <<  it->second <<"\n";
+      }
+    }
 };
 } // namespace fst
 #endif

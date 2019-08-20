@@ -91,9 +91,8 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
   std::pair<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
   // Check if this bseq is already related to a state. If not, push back this new bseq.
   if (result.second == true) {
-    std::string bseq_temporary;
-    for (auto const &piece: bseq) {bseq_temporary += piece;}
-    KALDI_LOG << "New bseq: " << bseq_temporary << " " << bseq[0];
+    //KALDI_LOG << "Print bseq: ";
+    //for (int i=0; i< bseq.size(); ++i) {KALDI_LOG << bseq[i];}
     state_to_bseq_.push_back(bseq);
   } 
 
@@ -117,6 +116,7 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
     oarc->nextstate = result.first->second;
   }
   oarc->weight = Weight::One();
+  KALDI_LOG << "Olabel is : " << oarc->olabel;
   return true;
 }
 } //namespace fst

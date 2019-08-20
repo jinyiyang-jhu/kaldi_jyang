@@ -171,7 +171,6 @@ int main(int argc, char *argv[]) {
     typedef std::unordered_set<fst::StdArc::Label> BPEStopSet;
     LexiconMap *lexicon_pointer = lexicon_info.ReturnLexiconMapPointer();
     BPEStopSet *bpe_stop_pointer = bpe_stop_words_info.ReturnStopWordsSetPointer();
-
    //  Begin to build BPEOnDemandFst
 		int32 n_done = 0, n_fail = 0;
     for (; !compact_lattice_reader.Done(); compact_lattice_reader.Next()) {
@@ -180,15 +179,17 @@ int main(int argc, char *argv[]) {
       CompactLattice &clat = compact_lattice_reader.Value();
       ArcSort(&clat, fst::OLabelCompare<CompactLatticeArc>());
       BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer, unk_int);
+      bpe_lex_fst.PrintInfo();
       CompactLattice composed_clat;
       ComposeCompactLatticeDeterministic(clat, &bpe_lex_fst, &composed_clat);
 
       // Determinizes the composed lattice.
-      Lattice composed_lat;
-      ConvertLattice(composed_clat, &composed_lat);
-      Invert(&composed_lat);
+      //Lattice composed_lat;
+      //ConvertLattice(composed_clat, &composed_lat);
+      //Invert(&composed_lat);
       CompactLattice determinized_clat;
-		  DeterminizeLattice(composed_lat, &determinized_clat);
+		  //DeterminizeLattice(composed_lat, &determinized_clat);
+      determinized_clat = composed_clat;
       if (determinized_clat.Start() == fst::kNoStateId) {
         KALDI_WARN << "Empty lattice for utterance " << key;
         n_fail++;
