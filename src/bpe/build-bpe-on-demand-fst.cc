@@ -7,7 +7,6 @@
 #include "bpe/deterministic-fst-bpe.h"
 
 namespace kaldi {
-const int kTemporaryEpsilon = -2;
 class WordLexiconInfo {
  private:
   typedef typename fst::StdArc::Label Label;
@@ -45,7 +44,6 @@ void WordLexiconInfo::UpdateLexiconMap(const std::vector<Label> &lexicon_entry){
     key.push_back(lexicon_entry[1]);
     key.insert(key.end(), lexicon_entry.begin() + 2, lexicon_entry.end());
     StateId new_word = lexicon_entry[0];
-    //if (new_word == 0) new_word = kTemporaryEpsilon;
     if (lexicon_map_.count(key) != 0) {
         if (lexicon_map_[key] == new_word)
             KALDI_WARN << "Duplicate entry in lexicon map for word " << lexicon_entry[0];
@@ -121,8 +119,8 @@ int main(int argc, char *argv[]) {
     const char *usage =
         "Convert BPE lattice to word lattice, by building a BPE OnDemandFst\n"
 				"with BPE lattice and lexicon, then compose this FST with given lattice.\n"
-        "Usage: build-bpe-on-demand-fst --unk-int=99999 <lexicon> \\\n"
-				"<lattice-rspecifier> <lattice-wspecifier>\n"
+        "Usage: build-bpe-on-demand-fst --unk-int=99999 <lexicon>"
+        "<stop-sym-list> <lattice-rspecifier> <lattice-wspecifier>\n"
         " e.g.: build-bpe-on-demand-fst "
         "    data/local/dict_bpe/lexicon.int data/lang/bpe_stop_sym.txt ark:in.lats ark:out.lats \\\n";
     using namespace kaldi;

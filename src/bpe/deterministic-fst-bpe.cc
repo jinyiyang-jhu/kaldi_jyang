@@ -46,7 +46,7 @@ BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon_map
   unk_int_ = unk_int;
   start_state_ = 0;
   std::vector<Label> bos;
- // bseq_to_state_[bos] = 0;
+  //bseq_to_state_[bos] = 0;
   state_to_context_.push_back(bos);
 }
 
@@ -61,9 +61,10 @@ StdArc::Weight BPEDeterministicOnDemandFst::Final(StateId s) {
   std::vector<Label> bseq = state_to_context_[s];
   KALDI_LOG << "Bseq size is " << bseq.size();
   kaldi::BaseFloat logprob;
-  if (bpe_stops_->find(bseq.back()) != bpe_stops_->end()) {// Last bpe piece is in stop bpe list
-    logprob = 0;
-    state_to_context_[s].clear();
+  //if (bpe_stops_->find(bseq.back()) != bpe_stops_->end()) {// Last bpe piece is in stop bpe list
+  if (state_to_context_[s].size() == 0) {
+    logprob = 0; // Final state log probability is 0;
+    //state_to_context_[s].clear();
   } else {
     logprob =  - numeric_limits<kaldi::BaseFloat>::infinity();
   }
@@ -86,7 +87,7 @@ void BPEDeterministicOnDemandFst::Clear() {
 
 bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) {
   KALDI_LOG << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
-  //KALDI_LOG << "GetArc: (StateId, Inlabel) = (" << s << ",  " <<ilabel << ")";
+  KALDI_LOG << "GetArc: (StateId, Inlabel) = (" << s << ",  " <<ilabel << ")";
   std::vector<Label> bseq = state_to_context_[s];
   std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_context_.size()));
   typedef MapType::iterator IterType;
@@ -114,7 +115,7 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
     } else{
       oarc->olabel = unk_int_;
     }
-    //state_to_context_[oarc->nextstate].clear();
+    state_to_context_[oarc->nextstate].clear();
   } else{
     oarc->olabel = 0;
   }
