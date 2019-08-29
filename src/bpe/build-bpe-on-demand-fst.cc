@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
         "Usage: build-bpe-on-demand-fst --unk-int=99999 <lexicon>"
         "<stop-sym-list> <lattice-rspecifier> <lattice-wspecifier>\n"
         " e.g.: build-bpe-on-demand-fst "
-        "    data/local/dict_bpe/lexicon.int data/lang/bpe_stop_sym.txt ark:in.lats ark:out.lats \\\n";
+        " data/local/dict_bpe/lexicon.int data/lang/bpe_stop_sym.txt ark:in.lats ark:out.lats \\\n";
     using namespace kaldi;
     using namespace fst;
     using fst::BPEDeterministicOnDemandFst;
@@ -151,7 +151,6 @@ int main(int argc, char *argv[]) {
                  << lexicon_rxfilename;
     }
     WordLexiconInfo lexicon_info(lexicon);
-    //lexicon_info.PrintLexicon();
 
     // Read BPE stop words list
     Input ki2(bpe_stops_rxfilename, &binary_in2);
@@ -165,7 +164,8 @@ int main(int argc, char *argv[]) {
     SequentialCompactLatticeReader compact_lattice_reader(lats_rspecifier);
     CompactLatticeWriter compact_lattice_writer(lats_wspecifier);
 
-    typedef std::unordered_map<std::vector<fst::StdArc::Label>, fst::StdArc::Label, VectorHasher<fst::StdArc::Label> > LexiconMap;
+    typedef std::unordered_map<std::vector<fst::StdArc::Label>, fst::StdArc::Label,
+                               VectorHasher<fst::StdArc::Label> > LexiconMap;
     typedef std::unordered_set<fst::StdArc::Label> BPEStopSet;
     LexiconMap *lexicon_pointer = lexicon_info.ReturnLexiconMapPointer();
     BPEStopSet *bpe_stop_pointer = bpe_stop_words_info.ReturnStopWordsSetPointer();
@@ -173,19 +173,19 @@ int main(int argc, char *argv[]) {
 		int32 n_done = 0, n_fail = 0;
     for (; !compact_lattice_reader.Done(); compact_lattice_reader.Next()) {
       std::string key = compact_lattice_reader.Key();
-      KALDI_LOG << "Utterance id is " << key;
       CompactLattice &clat = compact_lattice_reader.Value();
       ArcSort(&clat, fst::OLabelCompare<CompactLatticeArc>());
       BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer, unk_int);
       CompactLattice composed_clat;
       ComposeCompactLatticeDeterministic(clat, &bpe_lex_fst, &composed_clat);
-      // Determinizes the composed lattice.
+      Project(&composed_clat, fst::PROJECT_OUTPUT);
       Lattice composed_lat;
-      ConvertLattice(composed_clat, &composed_lat, true);
+      ConvertLattice(composed_clat, &composed_lat);
+
+      // Determinizes the composed lattice.
       Invert(&composed_lat);
       CompactLattice determinized_clat;
 		  DeterminizeLattice(composed_lat, &determinized_clat);
-      //determinized_clat = composed_clat;
       if (determinized_clat.Start() == fst::kNoStateId) {
         KALDI_WARN << "Empty lattice for utterance " << key;
         n_fail++;
