@@ -72,7 +72,6 @@ class BPEDeterministicOnDemandFst: public DeterministicOnDemandFst<StdArc> {
     virtual StateId Start();
     virtual Weight Final(StateId s);
     virtual bool GetArc(StateId s, Label ilabel, StdArc *oarc);
-    }
 };
 } // namespace fst
 #endif
