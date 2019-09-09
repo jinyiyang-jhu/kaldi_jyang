@@ -5,6 +5,7 @@ lattice_type="word"
 chain_model="false"
 cmd="run.pl"
 stage=0
+nj=
 [ -f path.sh ] && . ./path.sh
 . parse_options.sh || exit 1;
 . cmd.sh
@@ -61,9 +62,9 @@ if [ $stage -le 3 ]; then
   $cmd JOB=1:$nj $result_dir/log/score-auc.JOB.log \
     python3 utils/auc/compute_auc.py \
       $chain_model \
-      '<' '(' sort "$postdir_ref/post.JOB.txt" ')' \
-      '<' '(' sort "$postdir_hyp/post.JOB.txt" ')' \
-      '>' "$result_dir/auc_scores.JOB.txt" || exit 1;
+      "$postdir_ref/post.JOB.txt" \
+      "$postdir_hyp/post.JOB.txt" \
+      "$result_dir/auc_scores.JOB.txt" || exit 1;
   cat $result_dir/auc_scores.*.txt > $result_dir/auc_scores.txt
   rm $result_dir/auc_scores.*.txt
 fi

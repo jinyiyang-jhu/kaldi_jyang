@@ -1564,14 +1564,12 @@ void ComposeCompactLatticeDeterministic(
 
 
     Weight2 clat_final = clat.Final(s1);
-    KALDI_LOG << "(s1, s2): (" << s1 << ", " << s2 << ")";
     if (clat_final.Weight().Value1() !=
         std::numeric_limits<BaseFloat>::infinity()) {
       // Test for whether the final-prob of state s1 was zero.
       Weight1 det_fst_final = det_fst->Final(s2);
       if (det_fst_final.Value() !=
           std::numeric_limits<BaseFloat>::infinity()) {
-        KALDI_LOG << "Both infinity: clat and det_fst weight ! ";
         // Test for whether the final-prob of state s2 was zero.  If neither
         // source-state final prob was zero, then we should create final state
         // in fst_composed. We compute the product manually since this is more
@@ -1594,7 +1592,6 @@ void ComposeCompactLatticeDeterministic(
       fst::StdArc arc2;
       StateId next_state1 = arc1.nextstate, next_state2;
       bool matched = false;
-      KALDI_LOG << "Loop over pairs: (" << arc1.nextstate << ", " << next_state2 << ")";
       if (arc1.olabel == 0) {
         // If the symbol on <arc1> is <epsilon>, we transit to the next state
         // for <clat>, but keep <det_fst> at the current state.
