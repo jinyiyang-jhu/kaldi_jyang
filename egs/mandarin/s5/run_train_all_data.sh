@@ -57,56 +57,59 @@ mfccdir=mfcc
 #steps/decode.sh  --nj $num_jobs_decode --cmd "$decode_cmd" \
 #  exp/tri1$ext/graph $dev_dir exp/tri1$ext/decode 
 
-steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
-  $train_dir $lang_dir exp/tri1$ext exp/tri1${ext}_ali || exit 1;
+#steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
+#  $train_dir $lang_dir exp/tri1$ext exp/tri1${ext}_ali || exit 1;
 
-# Train tri2a, which is deltas+delta+deltas
-steps/train_deltas.sh --cmd "$train_cmd" \
-  3000 40000 $train_dir $lang_dir exp/tri1${ext}_ali exp/tri2a$ext || exit 1;
+## Train tri2a, which is deltas+delta+deltas
+#steps/train_deltas.sh --cmd "$train_cmd" \
+#  3000 40000 $train_dir $lang_dir exp/tri1${ext}_ali exp/tri2a$ext || exit 1;
 
-# tri2a decoding
+## tri2a decoding
 #utils/mkgraph.sh $decode_lang exp/tri2a$ext exp/tri2a$ext/graph || exit 1;
 #steps/decode.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
 #  exp/tri2a$ext/graph $dev_dir exp/tri2a$ext/decode 
 
-steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
-  $train_dir $lang_dir exp/tri2a$ext exp/tri2a${ext}_ali || exit 1;
+#steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
+#  $train_dir $lang_dir exp/tri2a$ext exp/tri2a${ext}_ali || exit 1;
 
-# train and decode tri2b [LDA+MLLT]
-steps/train_lda_mllt.sh --cmd "$train_cmd" 4000 50000 \
-  $train_dir $lang_dir exp/tri2a${ext}_ali exp/tri2b$ext || exit 1;
+## train and decode tri2b [LDA+MLLT]
+#steps/train_lda_mllt.sh --cmd "$train_cmd" 4000 50000 \
+#  $train_dir $lang_dir exp/tri2a${ext}_ali exp/tri2b$ext || exit 1;
 #utils/mkgraph.sh $decode_lang exp/tri2b$ext exp/tri2b$ext/graph || exit 1;
 #steps/decode.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
 #  exp/tri2b$ext/graph $dev_dir exp/tri2b$ext/decode 
 
-# Align all data with LDA+MLLT system (tri2b)
-steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
-  --use-graphs true $train_dir $lang_dir exp/tri2b$ext exp/tri2b${ext}_ali  || exit 1;
+## Align all data with LDA+MLLT system (tri2b)
+#steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
+#  --use-graphs true $train_dir $lang_dir exp/tri2b$ext exp/tri2b${ext}_ali  || exit 1;
 
-# From 2b system, train 3b which is LDA + MLLT + SAT.
-steps/train_sat.sh --cmd "$train_cmd" \
-  5000 100000 $train_dir $lang_dir exp/tri2b${ext}_ali exp/tri3b$ext || exit 1;
-utils/mkgraph.sh $decode_lang exp/tri3b$ext exp/tri3b$ext/graph|| exit 1;
-steps/decode_fmllr.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
-  exp/tri3b$ext/graph $dev_dir exp/tri3b$ext/decode 
+## From 2b system, train 3b which is LDA + MLLT + SAT.
+#steps/train_sat.sh --cmd "$train_cmd" \
+#  5000 100000 $train_dir $lang_dir exp/tri2b${ext}_ali exp/tri3b$ext || exit 1;
+#utils/mkgraph.sh $decode_lang exp/tri3b$ext exp/tri3b$ext/graph|| exit 1;
+#steps/decode_fmllr.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
+#  exp/tri3b$ext/graph $dev_dir exp/tri3b$ext/decode 
 
-# From 3b system, align all data.
-steps/align_fmllr.sh --nj $num_jobs --cmd "$train_cmd" \
-  $train_dir $lang_dir exp/tri3b$ext exp/tri3b${ext}_ali || exit 1;
+## From 3b system, align all data.
+#steps/align_fmllr.sh --nj $num_jobs --cmd "$train_cmd" \
+#  $train_dir $lang_dir exp/tri3b$ext exp/tri3b${ext}_ali || exit 1;
 
 
-echo "# Get WER and CER" > RESULTS
-for x in exp/*/decode*; do [ -d $x ] && grep WER $x/wer_[0-9]* | utils/best_wer.sh; \
-done | sort -n -r -k2 >> RESULTS
-echo "" >> RESULTS
-for x in exp/*/decode*; do [ -d $x ] && grep WER $x/cer_[0-9]* | utils/best_wer.sh; \
-done | sort -n -r -k2 >> RESULTS
+#echo "# Get WER and CER" > RESULTS
+#for x in exp/*/decode*; do [ -d $x ] && grep WER $x/wer_[0-9]* | utils/best_wer.sh; \
+#done | sort -n -r -k2 >> RESULTS
+#echo "" >> RESULTS
+#for x in exp/*/decode*; do [ -d $x ] && grep WER $x/cer_[0-9]* | utils/best_wer.sh; \
+#done | sort -n -r -k2 >> RESULTS
 
-echo "Training HMM-GMM succedded"
+#echo "Training HMM-GMM succedded"
 ivector_stage=0
 nnet3_affix="_cleanup"
+train_set="train_cleanup"
+dev_set="dev"
 local/nnet3/run_ivector_common.sh --stage $ivector_stage \
-	 --train-set $train_dir \
+	 --train-set $train_set \
+   --dev-set $dev_set \
 	 --gmm exp/tri3b$ext \
  	--num-threads-ubm 6 --num-processes 3 \
  	--nnet3-affix "$nnet3_affix" || exit 1;

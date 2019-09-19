@@ -7,7 +7,7 @@
 . ./cmd.sh
 
 num_jobs=80
-num_jobs_decode=100
+num_jobs_decode=80
 train_dir=data/train_gale
 dev_dir=data/dev
 lang_dir=data/lang_with_giga
@@ -53,9 +53,9 @@ mfccdir=mfcc
 #  2500 30000 ${train_dir}.50k $lang_dir exp/mono${ext}_ali.50k exp/tri1$ext || exit 1;
 
 # First triphone decoding
-utils/mkgraph.sh $decode_lang exp/tri1$ext exp/tri1$ext/graph || exit 1;
+#utils/mkgraph.sh $decode_lang exp/tri1$ext exp/tri1$ext/graph || exit 1;
 steps/decode.sh  --nj $num_jobs_decode --cmd "$decode_cmd" \
-  exp/tri1$ext/graph $dev_dir exp/tri1$ext/decode &
+  exp/tri1$ext/graph $dev_dir exp/tri1$ext/decode 
 
 steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
   $train_dir $lang_dir exp/tri1$ext exp/tri1${ext}_ali || exit 1;
@@ -67,7 +67,7 @@ steps/train_deltas.sh --cmd "$train_cmd" \
 # tri2a decoding
 utils/mkgraph.sh $decode_lang exp/tri2a$ext exp/tri2a$ext/graph || exit 1;
 steps/decode.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
-  exp/tri2a$ext/graph $dev_dir exp/tri2a$ext/decode &
+  exp/tri2a$ext/graph $dev_dir exp/tri2a$ext/decode 
 
 steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
   $train_dir $lang_dir exp/tri2a$ext exp/tri2a${ext}_ali || exit 1;
@@ -77,7 +77,7 @@ steps/train_lda_mllt.sh --cmd "$train_cmd" 4000 50000 \
   $train_dir $lang_dir exp/tri2a${ext}_ali exp/tri2b$ext || exit 1;
 utils/mkgraph.sh $decode_lang exp/tri2b$ext exp/tri2b$ext/graph || exit 1;
 steps/decode.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
-  exp/tri2b$ext/graph $dev_dir exp/tri2b$ext/decode &
+  exp/tri2b$ext/graph $dev_dir exp/tri2b$ext/decode 
 
 # Align all data with LDA+MLLT system (tri2b)
 steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
@@ -88,7 +88,7 @@ steps/train_sat.sh --cmd "$train_cmd" \
   5000 100000 $train_dir $lang_dir exp/tri2b${ext}_ali exp/tri3b$ext || exit 1;
 utils/mkgraph.sh $decode_lang exp/tri3b$ext exp/tri3b$ext/graph|| exit 1;
 steps/decode_fmllr.sh --nj $num_jobs_decode --cmd "$decode_cmd" \
-  exp/tri3b$ext/graph $dev_dir exp/tri3b$ext/decode &
+  exp/tri3b$ext/graph $dev_dir exp/tri3b$ext/decode 
 
 # From 3b system, align all data.
 steps/align_fmllr.sh --nj $num_jobs --cmd "$train_cmd" \

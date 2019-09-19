@@ -10,7 +10,11 @@
 stage=0
 num_threads_ubm=32
 ivector_extractor=
-
+train_set=
+dev_set=
+gmm=
+nnet3_affix=
+num_processes=
 set -e
 . ./cmd.sh
 . ./path.sh
@@ -30,10 +34,10 @@ if [ $stage -le 1 ] && [ -z $ivector_extractor ]; then
     utils/create_split_dir.pl /export/b0{5,6,7,8}/$USER/kaldi-data/mfcc/mandarin-$(date +'%m_%d_%H_%M')/s5/$mfccdir/storage $mfccdir/storage
   fi
 
-  for datadir in train_cleanup dev; do
+  for datadir in $train_set $dev_set; do
     utils/copy_data_dir.sh data/$datadir data/${datadir}_hires
     if [ "$datadir" == "train_cleanup" ]; then
-      dir=data/train_cleanup_hires
+      dir=data/${train_set}_hires
       cat $dir/wav.scp | python -c "
 import sys, os, subprocess, re, random
 scale_low = 1.0/8
@@ -56,7 +60,6 @@ for line in sys.stdin.readlines():
     steps/compute_cmvn_stats.sh data/${datadir}_hires_nopitch exp/make_hires/$datadir $mfccdir || exit 1;
   done
 fi
-train_set=train_cleanup
 if [ $stage -le 2 ] && [ -z $ivector_extractor ]; then
   # perform PCA on the data
   echo "$0: computing a PCA transform from the no-pitch hires data."
@@ -70,14 +73,14 @@ fi
 if [ $stage -le 3 ] && [ -z $ivector_extractor ]; then
   steps/online/nnet2/train_diag_ubm.sh --cmd "$train_cmd" --nj 30 \
     --num-frames 700000 \
-    data/train_cleanup_hires_nopitch 512 exp/nnet3/tri5_pca exp/nnet3/diag_ubm
+    data/${train_set}_hires_nopitch 512 exp/nnet3/tri5_pca exp/nnet3/diag_ubm
 fi
 
 if [ $stage -le 4 ] && [ -z $ivector_extractor ]; then
   # iVector extractors can in general be sensitive to the amount of data, but
   # this one has a fairly small dim (defaults to 100)
   steps/online/nnet2/train_ivector_extractor.sh --cmd "$train_cmd" --nj 10 \
-    data/train_cleanup_hires_nopitch exp/nnet3/diag_ubm exp/nnet3/extractor || exit 1;
+    data/${train_set}_hires_nopitch exp/nnet3/diag_ubm exp/nnet3/extractor || exit 1;
   ivector_extractor=exp/nnet3/extractor
 fi
 
@@ -85,27 +88,27 @@ if [ $stage -le 5 ]; then
   # Although the nnet will be trained by high resolution data,
   # we still have to perturbe the normal data to get the alignment
   # _sp stands for speed-perturbed
-  utils/perturb_data_dir_speed.sh 0.9 data/train_cleanup data/temp1
-  utils/perturb_data_dir_speed.sh 1.0 data/train_cleanup data/temp2
-  utils/perturb_data_dir_speed.sh 1.1 data/train_cleanup data/temp3
-  utils/combine_data.sh --extra-files utt2uniq data/train_cleanup_sp data/temp1 data/temp2 data/temp3
+  utils/perturb_data_dir_speed.sh 0.9 data/$train_set data/temp1
+  utils/perturb_data_dir_speed.sh 1.0 data/$train_set data/temp2
+  utils/perturb_data_dir_speed.sh 1.1 data/$train_set data/temp3
+  utils/combine_data.sh --extra-files utt2uniq data/${train_set}_sp data/temp1 data/temp2 data/temp3
   rm -r data/temp1 data/temp2 data/temp3
 
   mfccdir=mfcc_perturbed
-  for x in train_cleanup_sp; do
+  for x in ${train_set}_sp; do
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj 70 \
       data/$x exp/make_mfcc/$x $mfccdir || exit 1;
     steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
   done
-  utils/fix_data_dir.sh data/train_cleanup_sp
+  utils/fix_data_dir.sh data/${train_set}_sp
 
   $align_script --nj 30 --cmd "$train_cmd" \
-    data/train_cleanup_sp data/lang $gmm_dir ${gmm_dir}_sp_ali || exit 1
+    data/${train_set}_sp data/lang $gmm_dir ${gmm_dir}_sp_ali || exit 1
 
   # Now perturb the high resolution data
-  utils/copy_data_dir.sh data/train_cleanup_sp data/train_cleanup_sp_hires
+  utils/copy_data_dir.sh data/${train_set}_sp data/${train_set}_sp_hires
  mfccdir=mfcc_perturbed_hires
-  for x in train_cleanup_sp_hires; do
+  for x in ${train_set}_sp_hires; do
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj 70 --mfcc-config conf/mfcc_hires.conf \
       data/$x exp/make_hires/$x $mfccdir || exit 1;
     steps/compute_cmvn_stats.sh data/$x exp/make_hires/$x $mfccdir || exit 1;
@@ -113,10 +116,10 @@ if [ $stage -le 5 ]; then
     utils/data/limit_feature_dim.sh 0:39 data/$x data/${x}_nopitch || exit 1;
     steps/compute_cmvn_stats.sh data/${x}_nopitch exp/make_hires/$x $mfccdir || exit 1;
   done
-  utils/fix_data_dir.sh data/train_cleanup_sp_hires
+  utils/fix_data_dir.sh data/${train_set}_sp_hires
 fi
 
-train_set=train_cleanup_sp
+train_set=${train_set}_sp
 if [ -z $ivector_extractor ]; then
   echo "iVector extractor is not found!"
   exit 1;
