@@ -41,9 +41,9 @@ if [ $stage -le 1 ]; then
   #Although the nnet will be trained by high resolution data, we still have to
   # perturb the normal data to get the alignment.  _sp stands for speed-perturbed
   echo "$0: preparing directory for low-resolution speed-perturbed data (for alignment)"
-  utils/data/perturb_data_dir_speed_3way.sh data/${train_set} data/${train_set}_sp
+  #utils/data/perturb_data_dir_speed_3way.sh data/${train_set} data/${train_set}_sp
   echo "$0: making MFCC features for low-resolution speed-perturbed data"
-  steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" \
+  steps/make_mfcc_pitch_online.sh --nj $nj --cmd "$train_cmd" \
     data/${train_set}_sp exp/make_sp/${train_set}_sp $mfccdir || exit 1
   steps/compute_cmvn_stats.sh data/${train_set}_sp exp/make_sp/${train_set}_sp $mfccdir
   echo "$0: fixing input data-dir to remove nonexistent features, in case some "
@@ -83,7 +83,7 @@ if [ $stage -le 3 ]; then
   # features; this helps make trained nnets more invariant to test data volume.
   utils/data/perturb_data_dir_volume.sh data/${train_set}_sp_hires
 
-  for datadir in ${train_set}_sp_hires ${test_sets}; do
+  for datadir in ${train_set}_sp_hires ${test_sets}_hires; do
     steps/make_mfcc_pitch_online.sh --nj $nj --mfcc-config conf/mfcc_hires.conf \
       --cmd "$train_cmd" data/${datadir} exp/make_hires_sp/$datadir $mfccdir || exit 1
     steps/compute_cmvn_stats.sh data/${datadir} exp/make_hires_sp/$datadir $mfccdir
@@ -159,7 +159,8 @@ if [ $stage -le 5 ]; then
 
   # Also extract iVectors for the test data, but in this case we don't need the speed
   # perturbation (sp).
-  for data in ${test_sets}; do
+
+  for data in ${test_sets}_hires; do
     steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" --nj $nj \
       data/${data}_hires exp/nnet3${nnet3_affix}/extractor \
       exp/nnet3${nnet3_affix}/ivectors_${data}_hires
