@@ -202,7 +202,7 @@ local/chain/run_chain_common.sh --stage $stage \
                                 --ali-nj $ali_nj \
                                 --lores-train-data-dir ${lores_train_data_dir} \
                                 --lang $lang \
-                                --lang-original data/lang${lang_affix}
+                                --lang-original data/lang${lang_affix} \
                                 --lat-dir $lat_dir \
                                 --num-leaves 7000 \
                                 --tree-dir $tree_dir || exit 1;
