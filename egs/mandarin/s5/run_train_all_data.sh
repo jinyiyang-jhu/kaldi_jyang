@@ -103,15 +103,18 @@ mfccdir=mfcc
 #done | sort -n -r -k2 >> RESULTS
 
 #echo "Training HMM-GMM succedded"
-ivector_stage=0
+ivector_stage=-1
 nnet3_affix="_cleanup"
 train_set="train_cleanup"
-dev_set="dev"
+test_sets="dev"
 local/nnet3/run_ivector_common.sh --stage $ivector_stage \
 	 --train-set $train_set \
-   --dev-set $dev_set \
+   --test-sets $test_sets \
 	 --gmm exp/tri3b$ext \
- 	--num-threads-ubm 6 --num-processes 3 \
+   --lang $decode_lang \
+ 	--num-threads-ubm 6  \
+  --num-processes 4 \
  	--nnet3-affix "$nnet3_affix" || exit 1;
 echo "Ivector for train dir succedded"
-exit 0
+
+#local/chain/run_tdnn.sh
