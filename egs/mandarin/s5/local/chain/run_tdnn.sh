@@ -126,8 +126,8 @@ set -e
 # Final valid prob (xent)       -1.0441   -0.7874
 
 # configs for 'chain'
-stage=0
-decode_nj=80
+stage=-1
+decode_nj=40
 ali_nj=80
 train_set=train_cleanup
 gmm=tri3b_cleanup
@@ -138,7 +138,7 @@ lang_affix="_with_giga_test"
 # are just hardcoded at this level, in the commands below.
 affix=1d
 tree_affix=
-train_stage=-10
+train_stage=-1
 get_egs_stage=-10
 decode_iter=
 
@@ -183,8 +183,10 @@ lang=data/lang${lang_affix}_chain
 lat_dir=exp/chain${nnet3_affix}/${gmm}_${train_set}_sp_lats
 dir=exp/chain${nnet3_affix}/tdnn${affix:+_$affix}_sp
 train_data_dir=data/${train_set}_sp_hires
+dev_name="dev_hires"
 lores_train_data_dir=data/${train_set}_sp
 train_ivector_dir=exp/nnet3${nnet3_affix}/ivectors_${train_set}_sp_hires_nopitch
+dev_ivector_dir=exp/nnet3${nnet3_affix}/ivectors_dev_hires_nopitch
 
 # if we are using the speed-perturbed data we need to generate
 # alignments for it.
@@ -222,7 +224,7 @@ if [ $stage -le 14 ]; then
 
   cat <<EOF > $dir/configs/network.xconfig
   input dim=100 name=ivector
-  input dim=40 name=input
+  input dim=43 name=input
 
   # please note that it is important to have input layer with the name=input
   # as the layer immediately preceding the fixed-affine-layer to enable
@@ -261,7 +263,7 @@ fi
 if [ $stage -le 15 ]; then
   if [[ $(hostname -f) == *.clsp.jhu.edu ]] && [ ! -d $dir/egs/storage ]; then
     utils/create_split_dir.pl \
-     /export/b{09,10,11,12}/$USER/kaldi-data/egs/swbd-$(date +'%m_%d_%H_%M')/s5c/$dir/egs/storage $dir/egs/storage
+     /export/b{09,10,11,12}/$USER/kaldi-data/egs/mandarin-$(date +'%m_%d_%H_%M')/s5c/$dir/egs/storage $dir/egs/storage
   fi
 
   steps/nnet3/chain/train.py --stage $train_stage \
@@ -295,6 +297,7 @@ if [ $stage -le 15 ]; then
 
 fi
 
+echo "Train chain tdnn succeeded !"
 graph_dir=$dir/graph${lang_affix}
 if [ $stage -le 16 ]; then
   # Note: it might appear that this $lang directory is mismatched, and it is as
@@ -307,63 +310,37 @@ if [ $stage -le 16 ]; then
   mv $graph_dir/temp.fst $graph_dir/HCLG.fst
 fi
 
-echo "Train chain tdnn succeeded !"
-exit 0
+echo "Decoding "
 iter_opts=
-if [ ! -z $decode_iter ]; then
-  iter_opts=" --iter $decode_iter "
-fi
-if [ $stage -le 17 ]; then
-  rm $dir/.error 2>/dev/null || true
-  for decode_set in test_clean test_other dev_clean dev_other; do
-      (
-      steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
-          --nj $decode_nj --cmd "$decode_cmd" $iter_opts \
-          --online-ivector-dir exp/nnet3${nnet3_affix}/ivectors_${decode_set}_hires \
-          $graph_dir data/${decode_set}_hires $dir/decode_${decode_set}${decode_iter:+_$decode_iter}_tgsmall || exit 1
-      steps/lmrescore.sh --cmd "$decode_cmd" --self-loop-scale 1.0 data/lang_test_{tgsmall,tgmed} \
-          data/${decode_set}_hires $dir/decode_${decode_set}${decode_iter:+_$decode_iter}_{tgsmall,tgmed} || exit 1
-      steps/lmrescore_const_arpa.sh \
-          --cmd "$decode_cmd" data/lang_test_{tgsmall,tglarge} \
-          data/${decode_set}_hires $dir/decode_${decode_set}${decode_iter:+_$decode_iter}_{tgsmall,tglarge} || exit 1
-      steps/lmrescore_const_arpa.sh \
-          --cmd "$decode_cmd" data/lang_test_{tgsmall,fglarge} \
-          data/${decode_set}_hires $dir/decode_${decode_set}${decode_iter:+_$decode_iter}_{tgsmall,fglarge} || exit 1
-      ) || touch $dir/.error &
-  done
-  wait
-  if [ -f $dir/.error ]; then
-    echo "$0: something went wrong in decoding"
-    exit 1
-  fi
-fi
+steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
+	--nj $decode_nj --cmd "$decode_cmd" $iter_opts \
+	--online-ivector-dir $dev_ivector_dir \
+	$graph_dir data/$dev_name $dir/decode_${dev_name}_with_giga_test || exit 1
 
-if $test_online_decoding && [ $stage -le 18 ]; then
-  # note: if the features change (e.g. you add pitch features), you will have to
-  # change the options of the following command line.
-  steps/online/nnet3/prepare_online_decoding.sh \
-       --mfcc-config conf/mfcc_hires.conf \
-       $lang exp/nnet3${nnet3_affix}/extractor $dir ${dir}_online
-
-  rm $dir/.error 2>/dev/null || true
-  for data in test_clean test_other dev_clean dev_other; do
-    (
-      nspk=$(wc -l <data/${data}_hires/spk2utt)
-      # note: we just give it "data/${data}" as it only uses the wav.scp, the
-      # feature type does not matter.
-      steps/online/nnet3/decode.sh \
-          --acwt 1.0 --post-decode-acwt 10.0 \
-          --nj $nspk --cmd "$decode_cmd" \
-          $graph_dir data/${data} ${dir}_online/decode_${data}_tgsmall || exit 1
-
-    ) || touch $dir/.error &
-  done
-  wait
-  if [ -f $dir/.error ]; then
-    echo "$0: something went wrong in decoding"
-    exit 1
-  fi
-fi
-
-
+#if $test_online_decoding && [ $stage -le 18 ]; then
+#  # note: if the features change (e.g. you add pitch features), you will have to
+#  # change the options of the following command line.
+#  steps/online/nnet3/prepare_online_decoding.sh \
+#       --mfcc-config conf/mfcc_hires.conf \
+#       $lang exp/nnet3${nnet3_affix}/extractor $dir ${dir}_online
+#
+#  rm $dir/.error 2>/dev/null || true
+#  for data in test_clean test_other dev_clean dev_other; do
+#    (
+#      nspk=$(wc -l <data/${data}_hires/spk2utt)
+#      # note: we just give it "data/${data}" as it only uses the wav.scp, the
+#      # feature type does not matter.
+#      steps/online/nnet3/decode.sh \
+#          --acwt 1.0 --post-decode-acwt 10.0 \
+#          --nj $nspk --cmd "$decode_cmd" \
+#          $graph_dir data/${data} ${dir}_online/decode_${data}_tgsmall || exit 1
+#
+#    ) || touch $dir/.error &
+#  done
+#  wait
+#  if [ -f $dir/.error ]; then
+#    echo "$0: something went wrong in decoding"
+#    exit 1
+#  fi
+#fi
 exit 0;
