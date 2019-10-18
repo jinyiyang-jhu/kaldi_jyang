@@ -50,19 +50,33 @@ BPEDeterministicOnDemandFst::BPEDeterministicOnDemandFst(LexiconMap *lexicon_map
 }
 
 StdArc::StateId BPEDeterministicOnDemandFst::Start() {
+  // Return the start state
   return start_state_; //equivalent to "return this->start_state_;"
 }
 
 StdArc::Weight BPEDeterministicOnDemandFst::Final(StateId s) {
+  // Find the weight for the current state. If it is a final state, the weight
+  // is log-probablity is 0; otherwise, the log-probability is negative
+  // infinity.
+  // The way to decide whether a state is final, is to find if the related
+  // ilabel to the state is in the stop symbol list. If yes then it is a final
+  // state; otherwise it is not a final state (suppose no lattice ends with a
+  // non-stop bpe piece).
   typedef MapType::iterator IterType;
   std::vector<Label> bseq = state_to_context_[s];
   kaldi::BaseFloat logprob;
-  if (state_to_context_[s].size() == 0) {
-    logprob = 0; // Final state log probability is 0;
+  KALDI_WARN << "State "<< s << " context is ";
+  BPEDeterministicOnDemandFst::PrintVec(state_to_context_[s]);
+  if (state_to_context_[s].size() == 0) { // Is final state
+    //logprob = 0;
+    return Weight::One();
+  //if (bpe_stops_->find(state_to_context_[s]) != bpe_stops_->end()) {
+    // The current context is in stop symbol list
   } else {
-    logprob =  - numeric_limits<kaldi::BaseFloat>::infinity();
+    //logprob =  -numeric_limits<kaldi::BaseFloat>::infinity();
+    return Weight::Zero();
   }
-  return Weight(-logprob);
+  //return Weight(-logprob);
 }
 
 BPEDeterministicOnDemandFst::~BPEDeterministicOnDemandFst() {
@@ -76,21 +90,32 @@ void BPEDeterministicOnDemandFst::Clear() {
 }
 
 bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) {
-  std::vector<Label> bseq = state_to_context_[s];
+  // Create the lexicon fst on demand.
+  std::vector<Label> bseq = state_to_context_[s]; // This is the context related to the current state.
+  KALDI_WARN << "Current bseq is ";
+  BPEDeterministicOnDemandFst::PrintVec(bseq);
   std::pair<const std::vector<Label>, StateId> bseq_state_pair(bseq, static_cast<Label>(state_to_context_.size()));
   typedef MapType::iterator IterType;
   std::pair<IterType, bool> result = bseq_to_state_.insert(bseq_state_pair);
   // Check if this bseq is already related to a state. If not, push back this new bseq.
   if (result.second == true) {
+    KALDI_WARN << "Inserting new bseq to state " << s;
     state_to_context_.push_back(bseq);
   }
   // Create the oarc
   oarc->ilabel = ilabel;
   oarc->nextstate = result.first->second;
+  KALDI_WARN << "Pair is bseq and " << state_to_context_.size() << "==" << result.first->second;
+  //KALDI_WARN << "Next state is " << oarc->nextstate;
   state_to_context_[oarc->nextstate] = state_to_context_[s];
   state_to_context_[oarc->nextstate].push_back(ilabel);
-
+  KALDI_WARN << "Print current context";
+  BPEDeterministicOnDemandFst::PrintVec(state_to_context_[oarc->nextstate]);
   if (bpe_stops_->find(ilabel) != bpe_stops_->end()) {
+    KALDI_WARN << "*** Found an stop int: " << ilabel;
+    KALDI_WARN << "context length is " << state_to_context_[s].size();
+    //KALDI_WARN << "Print context of state " << s;
+    //BPEDeterministicOnDemandFst::PrintVec(state_to_context_[oarc->nextstate]);
     LexiconMap::iterator it = lexicon_map_->find(state_to_context_[oarc->nextstate]);
     if (it != lexicon_map_->end()){
       oarc->olabel = it->second;
@@ -103,5 +128,7 @@ bool BPEDeterministicOnDemandFst::GetArc(StateId s, Label ilabel, StdArc *oarc) 
   }
   oarc->weight = Weight::One();
   return true;
+
 }
 } //namespace fst
+
