@@ -1564,6 +1564,7 @@ void ComposeCompactLatticeDeterministic(
 
 
     Weight2 clat_final = clat.Final(s1);
+
     if (clat_final.Weight().Value1() !=
         std::numeric_limits<BaseFloat>::infinity()) {
       // Test for whether the final-prob of state s1 was zero.
@@ -1584,7 +1585,6 @@ void ComposeCompactLatticeDeterministic(
         composed_clat->SetFinal(state_map[s], final_weight);
       }
     }
-
     // Loops over pair of edges at s1 and s2.
     for (fst::ArcIterator<CompactLattice> aiter(clat, s1);
          !aiter.Done(); aiter.Next()) {
@@ -1592,6 +1592,7 @@ void ComposeCompactLatticeDeterministic(
       fst::StdArc arc2;
       StateId next_state1 = arc1.nextstate, next_state2;
       bool matched = false;
+
       if (arc1.olabel == 0) {
         // If the symbol on <arc1> is <epsilon>, we transit to the next state
         // for <clat>, but keep <det_fst> at the current state.
@@ -1612,7 +1613,7 @@ void ComposeCompactLatticeDeterministic(
         IterType siter = state_map.find(next_state_pair);
         StateId next_state;
 
-        // Adds composed state to <state_map>.
+        // Adds composed state to <state_map>
         if (siter == state_map.end()) {
           // If the composed state has not been created yet, create it.
           next_state = composed_clat->AddState();

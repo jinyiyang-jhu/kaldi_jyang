@@ -1,37 +1,7 @@
-// fstext/deterministic-fst-bpe.h
+// bpe/deterministic-fst-bpe.h
 
 // Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//  http://www.apache.org/licenses/LICENSE-2.0
-//
-// THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-// WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
-// See the Apache 2 License for the specific language governing permissions and
-// limitations under the License.
-//
-// This file includes material from the OpenFST Library v1.2.7 available at
-// http://www.openfst.org and released under the Apache License Version 2.0.
-//
-// See ../../COPYING for clarification regarding multiple authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 
 #ifndef KALDI_FSTEXT_DETERMINISTIC_FST_BPE_H_
 #define KALDI_FSTEXT_DETERMINISTIC_FST_BPE_H_
@@ -57,14 +27,12 @@ class BPEDeterministicOnDemandFst: public DeterministicOnDemandFst<StdArc> {
     typedef std::unordered_set<Label> BpeStopSymbols;
 
     LexiconMap *lexicon_map_;    // Mapping from BPE sequences to word
-    BpeStopSymbols *bpe_stops_; // Set of bpe ids which can be ending unit
+    BpeStopSymbols *bpe_stops_; // Set of bpe symbols which can be ending unit
     StateId start_state_;  // Fst start state
     MapType bseq_to_state_;   // Mapping from BPE sequence to fst state id
-    std::vector<std::vector<Label> > state_to_context_; // Store the BPE context of each FST state
+    std::vector<std::vector<Label> > state_to_context_; // Store the BPE context of each state
     Label unk_int_; // Label for the OOV word
-    //int max_len_; // Max length of input bpe sequence, if the input lattice
-                    //is beyond this length without matching any word in lexicon,
-                    // clear the context and output oov-symbol;
+
   public:
     BPEDeterministicOnDemandFst(LexiconMap *lexicon_map, BpeStopSymbols*bpe_stops, Label unk_int);
     ~BPEDeterministicOnDemandFst();

@@ -1,4 +1,6 @@
-// bpe/build-bpe-on-demand-fst.cc
+//bpebin/lattice-bpe-to-word.cc
+
+//  2019 Johns Hopkins University (Author: Jinyi Yang)
 
 #include "base/kaldi-common.h"
 #include "util/common-utils.h"
@@ -16,16 +18,11 @@ class WordLexiconInfo {
   void UpdateLexiconMap(const std::vector<Label> &lexicon_entry);
  public:
   WordLexiconInfo(const std::vector<std::vector<Label> > &lexicon);
-  void PrintLexicon(){
-      for (const auto& pair : lexicon_map_){
-        for (std::vector<int>::size_type i=0; i<pair.first.size(); i++){
-            std::cout << " " << pair.first.at(i);
-        }
-        std::cout << "Value is " << pair.second << "\n";
-      }
-  }
   LexiconMap* ReturnLexiconMapPointer(){
     return (&lexicon_map_);
+  }
+  int GetLexiconSize(){
+    return lexicon_map_.size();
   }
 };
 
@@ -48,7 +45,8 @@ void WordLexiconInfo::UpdateLexiconMap(const std::vector<Label> &lexicon_entry){
         if (lexicon_map_[key] == new_word)
             KALDI_WARN << "Duplicate entry in lexicon map for word " << lexicon_entry[0];
         else
-            KALDI_ERR << "Duplicate entry in lexicon map for word " << lexicon_entry[0] << " with inconsistent to-word.";
+            KALDI_ERR << "Duplicate entry in lexicon map for word " \
+            << lexicon_entry[0] << " with inconsistent to-word.";
     }
     lexicon_map_[key] = new_word;
 }
@@ -61,12 +59,6 @@ class BPEStopWordsInfo {
     void UpdateBPEStopList(const std::vector<Label> &bpe_stop_list);
   public:
     BPEStopWordsInfo(const std::vector<Label>  &bpe_stop_list);
-    void PrintBPEStopWords(){
-      unordered_set<Label> :: iterator itr;
-      for (itr = bpe_stop_sets_.begin(); itr != bpe_stop_sets_.end(); itr++){
-        std::cout << "Value is " << (*itr) << "\n";
-      }
-    }
     BPEStopSet* ReturnStopWordsSetPointer(){
       return (&bpe_stop_sets_);
     }
@@ -117,21 +109,23 @@ bool ReadBPEStopWords (std::istream &is,
 int main(int argc, char *argv[]) {
   try{
     const char *usage =
-        "Convert BPE lattice to word lattice, by building a BPE OnDemandFst\n"
-        "Usage: lattice-bpe-to-word [options] <subword-lexicon> "
+        "Convert BPE lattice to word lattice.\n"
+        "Usage: lattice-bpe-to-word [options] <subword-lexicon>"
         "<bpe-ending-list> <lattice-rspecifier> <lattice-wspecifier>\n"
         "Example of subword-lexicon: \n"
-        "3 2 5 40 \n"
+        "100 1 2 3 \n"
         "Example of bpe-ending-list: \n"
         "40\n"
-        "e.g.: lattice-bpe-to-word subword_lexicon.txt bpe_ending.txt ark:bpe.lats ark:word.lats \n";
+        "E.g.: lattice-bpe-to-word --unk-int=100000 subword_lexicon.txt"
+        "bpe_ending.txt ark:bpe.lats ark:word.lats \n";
     using namespace kaldi;
     using namespace fst;
     using fst::BPEDeterministicOnDemandFst;
     using kaldi::int32;
     StdArc::Label unk_int=-1;
     ParseOptions po(usage);
-    po.Register("unk-int", &unk_int, "OOV word id. Default is the max word-id+1");
+    po.Register("unk-int", &unk_int, "An integer to indicate OOV in the\n"
+    "output word lattice. You should have this item in you subword-lexicon.");
     po.Read(argc, argv);
     if (po.NumArgs() != 4) {
       po.PrintUsage();
@@ -171,12 +165,12 @@ int main(int argc, char *argv[]) {
     typedef std::unordered_set<fst::StdArc::Label> BPEStopSet;
     LexiconMap *lexicon_pointer = lexicon_info.ReturnLexiconMapPointer();
     BPEStopSet *bpe_stop_pointer = bpe_stop_words_info.ReturnStopWordsSetPointer();
-   //  Begin to build BPEOnDemandFst
+
+  //  Begin to build BPEOnDemandFst
 		int32 n_done = 0, n_fail = 0;
     for (; !compact_lattice_reader.Done(); compact_lattice_reader.Next()) {
       std::string key = compact_lattice_reader.Key();
       CompactLattice &clat = compact_lattice_reader.Value();
-      ArcSort(&clat, fst::OLabelCompare<CompactLatticeArc>());
       BPEDeterministicOnDemandFst bpe_lex_fst(lexicon_pointer, bpe_stop_pointer, unk_int);
       CompactLattice composed_clat;
       ComposeCompactLatticeDeterministic(clat, &bpe_lex_fst, &composed_clat);
@@ -188,6 +182,7 @@ int main(int argc, char *argv[]) {
       Invert(&composed_lat);
       CompactLattice determinized_clat;
 		  DeterminizeLattice(composed_lat, &determinized_clat);
+
       if (determinized_clat.Start() == fst::kNoStateId) {
         KALDI_WARN << "Empty lattice for utterance " << key;
         n_fail++;
