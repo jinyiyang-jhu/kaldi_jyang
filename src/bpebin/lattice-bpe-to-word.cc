@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
   try{
     const char *usage =
         "Convert BPE lattice to word lattice.\n"
-        "Usage: lattice-bpe-to-word [options] <subword-lexicon>"
+        "Usage: lattice-bpe-to-word [options] <subword-lexicon> "
         "<bpe-ending-list> <lattice-rspecifier> <lattice-wspecifier>\n"
         "Example of subword-lexicon: \n"
         "100 1 2 3 \n"
         "Example of bpe-ending-list: \n"
         "40\n"
-        "E.g.: lattice-bpe-to-word --unk-int=100000 subword_lexicon.txt"
+        "E.g.: lattice-bpe-to-word --unk-int=100000 subword_lexicon.txt "
         "bpe_ending.txt ark:bpe.lats ark:word.lats \n";
     using namespace kaldi;
     using namespace fst;
