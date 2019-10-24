@@ -5,6 +5,7 @@ chain_model="false"
 cmd="run.pl"
 stage=0
 nj=
+
 [ -f path.sh ] && . ./path.sh
 . parse_options.sh || exit 1;
 . cmd.sh
