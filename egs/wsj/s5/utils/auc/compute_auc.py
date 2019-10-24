@@ -3,12 +3,12 @@ import sys
 import io
 import argparse
 
-def read_post_file(filename, chain_model=False):
+def read_post_file(filename, is_chain_model=False):
   "Read the lattice arc posterior file."
   utt_infos = {}
   with open(filename, 'r', encoding='utf-8') as fid:
     for line in fid.readlines():
-      uttid, word, time_post_info = read_post_line(line)
+      uttid, word, time_post_info = read_post_line(line, is_chain_model=is_chain_model)
       if uttid not in utt_infos.keys(): # New utterance
         utt_infos[uttid] = {} # key:word, value:[time_post_info]
         utt_infos[uttid][word] = [time_post_info]
@@ -19,10 +19,10 @@ def read_post_file(filename, chain_model=False):
                                                     time_post_info, word)
   return utt_infos
 
-def read_post_line(line, chain_model=False):
+def read_post_line(line, is_chain_model=False):
   '''Read a line of lattice posterior
   line (str): format is <uttid> <stframe> <duration> <prob> <word> <phone-ids>
-  chain_model (bool): if true, <stframe> and <duration> are multiplied by 3.
+  is_chain_model (bool): if true, <stframe> and <duration> are multiplied by 3.
   '''
   tokens = line.strip().split()
   if len(tokens) == 0:
@@ -32,7 +32,7 @@ def read_post_line(line, chain_model=False):
     word = tokens[4]
     tokens = [float(i) for i in tokens[1:4]]
     tokens[1] = tokens[0] + tokens[1]
-    if chain_model:
+    if is_chain_model:
         tokens[0] *= 3
         tokens[1] *= 3
   return uttid, word, tokens
@@ -131,7 +131,8 @@ if __name__ == '__main__':
   args = parser.parse_args()
   chain_model = args.chain_model
   ref_post_infos = read_post_file(args.ref_post)
-  hyp_post_infos = read_post_file(args.hyp_post)
+  print('Chain model is ', chain_model)
+  hyp_post_infos = read_post_file(args.hyp_post, is_chain_model=chain_model)
   score_fid = open(args.score_file, 'w', encoding='utf-8')
 
   # Check if reference and hypothesisi has same number of utterances.

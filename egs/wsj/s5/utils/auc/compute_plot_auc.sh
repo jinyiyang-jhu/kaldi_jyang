@@ -1,7 +1,6 @@
 #!/bin/bash
 
 
-lattice_type="word"
 chain_model="false"
 cmd="run.pl"
 stage=0
@@ -10,15 +9,14 @@ nj=
 . parse_options.sh || exit 1;
 . cmd.sh
 
-if [ $# -ne 5 ];then
-    echo "Usage: $0 [--lattice-type word | phone ] [ --chain-model true | false] <data-dir> <lang> <align-dir> <decode-dir> <result-dir>"
+if [ $# -ne 4 ];then
+    echo "Usage: $0 [ --chain-model true | false] <lang> <align-dir> <decode-dir> <result-dir>"
     exit 1
 fi
-data_dir=$1
-lang=$2
-align_dir=$3
-decode_dir=$4
-result_dir=$5
+lang=$1
+align_dir=$2
+decode_dir=$3
+result_dir=$4
 
 decode_mdl="$(dirname $decode_dir)/final.mdl"
 [ ! -f $decode_dir/lat.1.gz ] && echo "Decoding lattice does not exist !" && exit 1;
@@ -35,12 +33,18 @@ fi
 nj=`ls $decode_dir/lat.*.gz | wc -l`
 if [ `ls $align_dir/lat.*.gz | wc -l` -ne $nj ]; then
     echo "Align does not exist, or align.*.gz number not equal to lat.*.gz, first run steps/align_fmllr_lats.sh with --nj $nj"
-    echo "e.g. steps/align_fmllr_lats.sh --nj $nj <data-dir> <lang> <align-mdl-dir> <align-lat-dir>"
+    echo "e.g. steps/align_fmllr_lats.sh --nj $lat_nj <data-dir> <lang> <align-mdl-dir> <align-lat-dir>"
     exit 1;
 fi
 
-postdir_ref=$result_dir/post_${lattice_type}_ref
-postdir_hyp=$result_dir/post_${lattice_type}_hyp
+postdir_ref=$result_dir/post_ref
+postdir_hyp=$result_dir/post_hyp
+
+ali_nj=`ls $align_dir/lat.*.gz | wc -l`
+if [ $ali_nj != $nj ]; then
+  echo "Number of align lattices do not equal to decoding lattices !"
+  exit 1;
+fi
 
 if [ $stage -le 1 ]; then
   echo "Computing posterior from alignment"
