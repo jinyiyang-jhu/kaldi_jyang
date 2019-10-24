@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
         KALDI_WARN << "Empty lattice for utterance " << key;
         n_fail++;
       } else {
+        KALDI_LOG << "Converting utterance " << key;
         compact_lattice_writer.Write(key, determinized_clat);
         n_done++;
       }
