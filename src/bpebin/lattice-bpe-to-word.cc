@@ -183,7 +183,6 @@ int main(int argc, char *argv[]) {
       Invert(&composed_lat);
       CompactLattice determinized_clat;
 		  DeterminizeLattice(composed_lat, &determinized_clat);
-
       if (determinized_clat.Start() == fst::kNoStateId) {
         KALDI_WARN << "Empty lattice for utterance " << key;
         n_fail++;
