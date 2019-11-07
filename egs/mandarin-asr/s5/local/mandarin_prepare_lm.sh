@@ -14,21 +14,24 @@ local_text_dir=$1
 extra_text_dir=$2
 lm_dir=$3
 
-mkdir -p $lm_dir || exit 1;
+echo "Building $ngram_order gram LM"
+[ ! -d $lm_dir ] && mkdir -p $lm_dir exit 1;
 [ ! -d $local_text_dir/lm_${ngram_order}gram ] && mkdir -p $local_text_dir/lm_${ngram_order}gram && exit 1
 [ ! -d $extra_text_dir/lm_${ngram_order}gram ] && mkdir -p $extra_text_dir/lm_${ngram_order}gram && exit 1
 
-if [ ! -f $local_text_dir/lm_${ngram_order}gram/srilm/*.gz ]; then
+if [ ! -f $local_text_dir/lm_${ngram_order}gram/*mincount_ixed_lm.gz ]; then
   echo "Training LM with train text"
   [ ! -f $local_text_dir/text ] && echo "No $local_text_dir/text" && exit 1;
   cut -d " " -f1- $local_text_dir/text > $local_text_dir/lm_${ngram_order}gram/text || exit 1
-  local/train_lms.sh $local_text_dir/lm_${ngram_order}gram $local_text_dir/lm_${ngram_order}gram
+  local/train_lms.sh --ngram-order $ngram_order \
+    $local_text_dir/lm_${ngram_order}gram $local_text_dir/lm_${ngram_order}gram
 fi
 
-if [ ! -f $extra_text_dir/lm_${ngram_order}gram/srilm/*.gz ]; then
+if [ ! -f $extra_text_dir/lm_${ngram_order}gram/*mincount_ixed_lm.gz ]; then
   echo "Training LM with extra text"
   [ ! -f $extra_text_dir/text ] && echo "No $extra_text_dir/text" && exit 1;
-  local/train_lms.sh $extra_text_dir $extra_text_dir/lm_${ngram_order}gram
+  local/train_lms.sh --ngram-order $ngram_order \
+    $extra_text_dir $extra_text_dir/lm_${ngram_order}gram
 fi
 
 

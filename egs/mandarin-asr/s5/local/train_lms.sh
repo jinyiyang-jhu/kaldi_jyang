@@ -3,12 +3,16 @@
 
 # To be run from one directory above this script.
 ngram_order=4
+. path.sh
+. utils/parse_options.sh
+
 if [ $# != 2 ]; then
   echo "Usage: <lm-src-dir> <lm-dir>"
   echo "E.g. $0 --ngram-order 4 <data/local/train> <data/local/lm_no_extra>"
 fi
-dir=$2
+
 text=$1/text
+dir=$2
 
 [ ! -d $dir ] && mkdir -p $dir
 [ ! -f $text ] && echo "$0: No such file $text" && exit 1;
@@ -76,7 +80,7 @@ export PATH=$PATH:$KALDI_ROOT/tools/kaldi_lm
    { for(n=2;n<=NF;n++) { printf map[$n]; if(n<NF){ printf " "; } else { print ""; }}}' | gzip -c >$dir/train.gz \
     || exit 1;
 
-# train_lm.sh --arpa --lmtype 3gram-mincount $dir || exit 1;
+ train_lm.sh --arpa --lmtype ${ngram_order}gram-mincount $dir || exit 1;
 
 # LM is small enough that we don't need to prune it (only about 0.7M N-grams).
 # Perplexity over 128254.000000 words is 90.446690
