@@ -22,11 +22,12 @@ echo "Building $ngram_order gram LM"
 if [ ! -f $local_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm_unpruned.gz ]; then
   echo "Training LM with train text"
   [ ! -f $local_text_dir/text ] && echo "No $local_text_dir/text" && exit 1;
-  cut -d " " -f1- $local_text_dir/text > $local_text_dir/lm_${ngram_order}gram/text || exit 1
+ # cut -d " " -f1- $local_text_dir/text > $local_text_dir/lm_${ngram_order}gram/text || exit 1
+	awk '{i=$2;for (n=3;n<=NF;++n){i=i" "$n;}print i}' $local_text_dir/text > $local_text_dir/lm_${ngram_order}gram/text
   local/train_lms.sh --ngram-order $ngram_order \
     $local_text_dir/lm_${ngram_order}gram $local_text_dir/lm_${ngram_order}gram
 fi
-
+exit 0
 if [ ! -f $extra_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm_unpruned.gz ]; then
   echo "Training LM with extra text"
   [ ! -f $extra_text_dir/text ] && echo "No $extra_text_dir/text" && exit 1;
