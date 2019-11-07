@@ -82,9 +82,6 @@ export PATH=$PATH:$KALDI_ROOT/tools/kaldi_lm
 
  train_lm.sh --arpa --lmtype ${ngram_order}gram-mincount $dir || exit 1;
 
-# LM is small enough that we don't need to prune it (only about 0.7M N-grams).
-# Perplexity over 128254.000000 words is 90.446690
-
 # note: output is
-# data/local/lm/3gram-mincount/lm_unpruned.gz
+# $dir/${ngram_order}gram-mincount/lm_unpruned.gz
 echo train lm succeeded
