@@ -1,13 +1,13 @@
 #!/bin/bash
 
 ngram_order=4
-
+oov_sym="<UNK>"
 . path.sh
 . utils/parse_options.sh
 
 if [ $# != 4 ]; then
   echo "Usage: [--ngram-order ]<gale-tdt-lm-src-dir> <giga-lm-src-dir> <lm-dir> <dev-dir>"
-  echo "E.g. $0 --ngram-order 4 data/local/train data/local/gigaword_chinese data/local/lm data/dev "
+  echo "E.g. $0 --ngram-order 4 --oov-sym "<UNK>" data/local/train data/local/gigaword_chinese data/local/lm data/dev "
   exit 1
 fi
 
@@ -48,7 +48,7 @@ if [ ! -f $lm_dir/${ngram_order}gram_mincount_mixed_lm.gz ]; then
     $extra_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm.ppl > $lm_dir/best-mix.ppl
   echo "local:extra=0.8:0.2" > $lm_dir/mix.pair
 
-  ngram -order $ngram_order -unk \
+  ngram -order $ngram_order -unk -map-unk $oov_sym \
     -lm $local_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm_unpruned.gz -lambda 0.8 \
     -mix-lm $extra_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm_unpruned.gz \
     -write-lm $lm_dir/${ngram_order}gram_mincount_mixed_lm.gz
