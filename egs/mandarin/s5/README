@@ -1,0 +1,47 @@
+This recipe contains corpus from the follwing directories:
+Audio:
+  # Gale phase 2/3/4
+  /export/corpora/LDC/LDC2013S08/
+  /export/corpora/LDC/LDC2013S04/
+  /export/corpora/LDC/LDC2014S09/
+  /export/corpora/LDC/LDC2015S06/
+  /export/corpora/LDC/LDC2015S13/
+  /export/corpora/LDC/LDC2016S03/
+  # TDT4
+  /export/corpora/LDC/LDC2005S11
+
+  Sep 12. Adding Gale Phase 4 Broadcast news
+  /export/corpora/LDC/LDC2017S25
+  Adding TDT2/3
+  /export/corpora/LDC/LDC2001S93
+  /export/corpora/LDC/LDC2001S95
+Text:
+  # Gale phase 2/3/4
+  /export/corpora/LDC/LDC2013T20/
+  /export/corpora/LDC/LDC2013T08/
+  /export/corpora/LDC/LDC2014T28/
+  /export/corpora/LDC/LDC2015T09/
+  /export/corpora/LDC/LDC2015T25/
+  /export/corpora/LDC/LDC2016T12/
+  # TDT4
+  /export/corpora/LDC/LDC2005T16
+  # Gigga word (xin:simplified, cna:traditional. Use only xin)for LM training
+  /export/corpora/LDC/LDC2003T09/gigaword_man/xin
+  "Failed to convert luanma ... translation failed during local/prep_dict.sh"
+
+  Sep 12. Adding Gale Phase 4 Broadcast news
+  /export/corpora/LDC/LDC2017T18
+  Adding TDT2/3
+  /export/corpora/LDC/LDC2001T57
+  /export/corpora/LDC/LDC2001T58
+
+dict: cmudict
+data/local/lang_gigaword_chinese:
+  OOV rate: Seen 172700221 out of 197692605 tokens; OOV rate is 12.64
+data/train_cleanup (GALE 2/3/4, TDT2/3/4)
+  Total time: ~887 hours
+  OOV rate: Seen 7623191 out of 8567656 tokens; OOV rate is 11.02%
+
+data/dev (Kaldi recipe: GALE 2/3/4)
+  Total time: 58 hours
+  OOV rate: Seen 478728 out of 544592 tokens; OOV rate is 12.09%
