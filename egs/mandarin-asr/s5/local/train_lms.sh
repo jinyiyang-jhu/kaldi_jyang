@@ -3,6 +3,7 @@
 
 # To be run from one directory above this script.
 ngram_order=4
+oov_sym="<UNK>"
 . path.sh
 . utils/parse_options.sh
 
