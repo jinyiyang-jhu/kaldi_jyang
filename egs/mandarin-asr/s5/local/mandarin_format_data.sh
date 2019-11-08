@@ -13,14 +13,14 @@ set -x
 
 for dir in dev train; do
    cp -prT data/local/$dir data/$dir
-   sed -i 's/<TURN>//g' $data/$dir/text
+   sed -i 's/<TURN>//g' data/$dir/text
 done
 
 export LC_ALL=C
 
 ori_lang=data/lang_with_giga_test
 test_lang=data/lang_with_giga_decode
-arpa_lm=data/local/lm_4gram/4gram_mincount_ixed_lm.gz
+arpa_lm=data/local/lm_4gram/4gram_mincount_mixed_lm.gz
 [ ! -f $arpa_lm ] && echo No such file $arpa_lm && exit 1;
 
 rm -r $test_lang || true
