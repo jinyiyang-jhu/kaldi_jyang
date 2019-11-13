@@ -12,7 +12,6 @@ tdtData=$(utils/make_absolute.sh "${@: -1}" );
 wavedir=$tdtData/wav
 mkdir -p $wavedir
 
-echo $wavedir
 
 length=$(($#-1))
 args=${@:1:$length}
@@ -26,7 +25,6 @@ for var in $args; do
   CD=$(basename $var)
   [ -d $wavedir/$CD ] && rm -rf $wavedir/$CD
   mkdir -p $wavedir/$CD
-  echo "var is $var"
   find $var -type f -name *.sph | grep "MAN" | while read file; do
     f=$(basename $file)
     if [[ ! -L "$wavedir/$CD/$f" ]]; then
