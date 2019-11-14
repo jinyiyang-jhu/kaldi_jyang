@@ -118,9 +118,6 @@ foreach my $file (@files) {
     if ($line =~ /<DOCNO>/) {
       @docno = get_doc_no $line;
       $doc_id = $docno[0].$docno[1];
-      #if ($sgml_file_id ne $doc_id) {
-      #  print STDERR "$0: WARNING: SGML filename does not match $line in file $file\n";
-      #}
       $doc_id = $docno[2]; # Four digits
       ;
     } elsif($line =~ /<DATE_TIME>/ ){
@@ -149,8 +146,7 @@ foreach my $file (@files) {
     } elsif ($line eq "<\/DOC>") {
       if ((@text > 0) && ($doctype)) {
         if ($end_time <= $start_time){
-          print STDERR "$0: WARNING: File $file has invalid time tag at <DOCNO>
-          $doc_id\n";
+          print STDERR "$0: WARNING: File $file has invalid time tag at <DOCNO> $doc_id\n";
         }
         my $time_tag = get_time_tag($start_time, $end_time);
         $docname = $sgml_file."_".$doc_id."_".$time_tag;
