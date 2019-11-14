@@ -93,6 +93,8 @@ if [ ! -d tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
   fi
 fi
 
+awk '{print $2}' $txtdir/map.tmp > $txtdir/uttids
+
 cat $txtdir/contentall.tmp |\
   sed -e 's/,//g' |\
   sed -e 's/<foreign language=\"[a-zA-Z]\+\">/ /g' |\
@@ -103,8 +105,9 @@ cat $txtdir/contentall.tmp |\
   sed -e 's/\[ns\]//g' |\
   sed -e 's/<noise>\(.\+\)<\/noise>/\1/g' |\
   sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
-  local/mandarin_text_normalize.pl | \
-  python local/gale_segment.py \
+  perl local/mandarin_text_normalize.pl | \
+  python local/mandarin_segment.py |\
+  paste $txtdir/uttids - |\ 
   > $txtdir/text
 
 paste $txtdir/allid.tmp $txtdir/text | sed 's: $::' | awk '{if (NF>5) {print $0}}'  > $txtdir/all_1.tmp
