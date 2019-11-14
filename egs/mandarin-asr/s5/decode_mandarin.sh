@@ -1,5 +1,5 @@
 ac_dir="/export/b07/jyang/kaldi-jyang/kaldi/egs/mandarin/s5/"
-stage=-1
+stage=2
 lang_original=data/lang_with_giga_decode
 lang=${lang_original}_chain
 dir=exp/chain_cleanup/tdnn_1d_sp
