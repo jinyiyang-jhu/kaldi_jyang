@@ -41,13 +41,13 @@ done
 # transcriptions which have corresponding audio files.
 find -L $txtdir -type f -name *.src_sgm | grep "MAN" | \
   awk 'NR==FNR {a[$1];next}; {name=$0;gsub(".src_sgm$", "", name); gsub(".*/", "", name); \
-    if (name in a) print $0}' $sph_scp - | sort > $txtdir/all_trans.flist  || exit 1;
+    if (name in a) print $0}' $sph_scp - | sort > $txtdir/trans.flist  || exit 1;
 
-perl $top_pwd/local/tdt_mandarin_parse_sgm.pl $txtdir/all_trans.flist > $txtdir/alltext.tmp || exit 1;
+perl $top_pwd/local/tdt_mandarin_parse_sgm.pl $txtdir/trans.flist > $txtdir/text.tmp || exit 1;
 cd $top_pwd
 
-cut -d " " -f1 $txtdir/alltext.tmp > $txtdir/all.uttid
-cut -d " " -f2- $txtdir/alltext.tmp > $txtdir/all.trans
+cut -d " " -f1 $txtdir/text.tmp > $txtdir/uttid
+cut -d " " -f2- $txtdir/text.tmp > $txtdir/trans
 
 pyver=`python --version 2>&1 | sed -e 's:.*\([2-3]\.[0-9]\+\).*:\1:g'`
 export PYTHONPATH=$PYTHONPATH:`pwd`/tools/mmseg-1.3.0/lib/python${pyver}/site-packages
@@ -67,19 +67,26 @@ if [ ! -d tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
   fi
 fi
 # Create text, use mmseg for splitting Mandarin characters into words.
-cat $txtdir/all.trans |\
+cat $txtdir/trans |\
    sed -e 's/,//g' | \
    sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
    perl local/mandarin_text_normalize.pl |\
    python local/mandarin_segment.py |\
    sed -e 's/THISISSPKTURN/<TURN>/g' |\
-   paste $txtdir/all.uttid - |\
-   awk '{if (NF>2 || (NF==2 && $2 != "<TURN>")) print $0}' > $txtdir/all.text
+   paste $txtdir/uttid - |\
+   awk '{if (NF>2 || (NF==2 && $2 != "<TURN>")) print $0}' > $txtdir/text_with_spk_turn
 
-awk '{print $1" "$1}' $txtdir/all.text > $txtdir/all.utt2spk
-cp $txtdir/all.utt2spk $txtdir/all.spk2utt
+# The text_with_spk_turn file contains label "<TURN>" to indicate speaker
+# switching, in case the speaker diarization process is required. We do not use
+# speaker diarization at this moment, so the spk id will be the segment
+# (utterance)
 
-awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=5;++i) uttid=uttid"_"S[i]; print segments " " uttid " " S[7]/100 " " S[8]/100}' < $txtdir/all.text > $txtdir/all.segments
+cat $txtdir/text_with_spk_turn | sed 's/<TURN>//g' > $txtdir/text
+awk '{print $1" "$1}' $txtdir/text_with_spk_turn > $txtdir/utt2spk
+cp $txtdir/utt2spk $txtdir/spk2utt
 
-awk '{print $1}' $txtdir/all.text > $txtdir/all.uttid
+awk '{segments=$1; split(segments, S, "_"); uttid=S[1];for (i=2;i<=5;++i) uttid=uttid"_"S[i]; print segments " " uttid " " S[7]/100 " " S[8]/100}' < $txtdir/text > $txtdir/segments
+
+awk '{print $1}' $txtdir/text > $txtdir/uttid
+
 echo "TDT Mandarin text preparation succeed !"
