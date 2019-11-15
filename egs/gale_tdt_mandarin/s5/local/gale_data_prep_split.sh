@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Copyright 2014 (author: Ahmed Ali, Hainan Xu)
-# Copyright 2016 Johns Hopkins University (author: Jan "Yenda" Trmal)
-# Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
+# Copyright 2016 Johns Hopkins Univeersity (author: Jan "Yenda" Trmal)
 # Apache 2.0
 
 if [ $# -ne 2 ]; then
-   echo "Arguments should be the <gale folder> <local-gale folder>"; exit 1
+   echo "Arguments should be the <gale folder> <local gale folder>"; exit 1
 fi
 
 set -e -o pipefail
-
+#data will data/local
+mkdir -p $2
 galeData=$(utils/make_absolute.sh $1)
 dir=$(utils/make_absolute.sh $2)
 
@@ -25,21 +25,31 @@ utils/filter_scp.pl --exclude -f 2 \
 mv $galeData/all $galeData/all.orig
 mv $galeData/all.nodup $galeData/all
 
-grep    -f <(cat local/test.LDC*) $galeData/all | grep -v -F -f local/bad_utts  > $galeData/all.dev
-grep -v -f <(cat local/test.LDC*) $galeData/all | grep -v -F -f local/bad_utts  > $galeData/all.train
+grep    -f <(cat local/gale_dev/test.LDC*) $galeData/all | grep -v -F -f local/gale_bad_utts  > $galeData/all.dev
+
+grep    -f <(cat local/gale_eval/test.LDC*) $galeData/all | grep -v -F -f local/gale_bad_utts  > $galeData/all.eval
+
+grep -v -f <(cat local/gale_dev/test.LDC*) $galeData/all |\
+  grep -v -f <(cat local/gale_eval/test.LDC*) |\
+  grep -v -F -f local/gale_bad_utts  > $galeData/all.train
 
 cat $galeData/all.dev | awk '{print$2}' > $galeData/dev_utt_list
+cat $galeData/all.eval | awk '{print$2}' > $galeData/eval_utt_list
 cat $galeData/all.train | awk '{print$2}' > $galeData/train_utt_list
 
 mkdir -p $dir/dev
+mkdir -p $dir/eval
 mkdir -p $dir/train
 utils/filter_scp.pl -f 1 $galeData/dev_utt_list $galeData/utt2spk > $dir/dev/utt2spk
 utils/utt2spk_to_spk2utt.pl $dir/dev/utt2spk | sort -u > $dir/dev/spk2utt
 
+utils/filter_scp.pl -f 1 $galeData/eval_utt_list $galeData/utt2spk > $dir/eval/utt2spk
+utils/utt2spk_to_spk2utt.pl $dir/eval/utt2spk | sort -u > $dir/eval/spk2utt
+
 utils/filter_scp.pl -f 1 $galeData/train_utt_list $galeData/utt2spk > $dir/train/utt2spk
 utils/utt2spk_to_spk2utt.pl $dir/train/utt2spk | sort -u > $dir/train/spk2utt
 
-for x in dev train; do
+for x in dev eval train; do
  outdir=$dir/$x
  file=$galeData/all.$x
  mkdir -p $outdir
@@ -48,13 +58,15 @@ for x in dev train; do
 done
 
 cat $dir/dev/segments | awk '{print$2}' | sort -u > $galeData/dev.wav.list
+cat $dir/eval/segments | awk '{print$2}' | sort -u > $galeData/eval.wav.list
 cat $dir/train/segments | awk '{print$2}' | sort -u > $galeData/train.wav.list
 
 utils/filter_scp.pl -f 1 $galeData/dev.wav.list $galeData/wav.scp > $dir/dev/wav.scp
+utils/filter_scp.pl -f 1 $galeData/eval.wav.list $galeData/wav.scp > $dir/eval/wav.scp
 utils/filter_scp.pl -f 1 $galeData/train.wav.list $galeData/wav.scp > $dir/train/wav.scp
 
 cat $galeData/wav.scp | awk -v seg=$dir/train/segments 'BEGIN{while((getline<seg) >0) {seen[$2]=1;}}
  {if (seen[$1]) { print $0}}' > $dir/train/wav.scp
 
 
-echo data prep split succeeded
+echo Gale data prep split succeeded
