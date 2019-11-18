@@ -12,25 +12,25 @@ extra_text=
 . path.sh
 . utils/parse_options.sh
 set -e -o pipefail
-if [ $# != 1 ]; then
-  echo "Usage: local/prepare_dict.sh [--extra-text /path/to/extra-text] <dict-dir>"
-  echo "E.g., $0: --extra-text data/local/gigaword/filtered_text data/local/dict"
+if [ $# != 2 ]; then
+  echo "Usage: local/prepare_dict.sh [--extra-text /path/to/extra-text] <dict-dir> <src-dir>"
+  echo "E.g., $0: --extra-text data/local/gigaword/filtered_text data/local/dict data/local/train"
   exit 1;
 fi
 
 dict_dir=$1
-train_dir=data/local/train
+src_dir=$2
 
 mkdir -p $dict_dir/lexicon-{en,ch}
 
 # extract full vocabulary from train text
-cat $train_dir/text |\
+cat $src_dir/text |\
   awk '{for (i = 2; i <= NF; i++) print $i}' |\
-  perl -ape 's/ /\n/g;s/<TURN>//g;' | sort -u | \
+  perl -ape 's/ /\n/g;' | sort -u | \
   grep -v '\[LAUGHTER\]' | \
   grep -v '\[NOISE\]' |\
   grep -v '\[VOCALIZEDNOISE\]' |\
-  grep -v '\[VOCALIZED-NOISE\]' |\
+  grep -v '\[VOCALIZED-NOISE\]' \
   > $dict_dir/words_train.txt
 
 # extract vocabulary from extra text
@@ -45,6 +45,8 @@ if [ ! -z $extra_text ];then
     sed -e 's/((\([^)]\{0,\}\)))/\1/g;' |\
     perl -ape 's/ /\n/g;' | awk 'NF>0' > $dict_dir/extra_words.txt
     cat $dict_dir/words_train.txt $dict_dir/extra_words.txt | sort -u >    $dict_dir/words.txt
+else
+  cp $dict_dir/words_train.txt $dict_dir/words.txt
 fi
 
 # split into English and Chinese
