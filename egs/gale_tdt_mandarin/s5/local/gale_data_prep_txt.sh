@@ -93,7 +93,7 @@ if [ ! -d tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
   fi
 fi
 
-awk '{print $2}' $txtdir/map.tmp > $txtdir/uttid
+
 
 cat $txtdir/contentall.tmp |\
   sed -e 's/,//g' |\
@@ -106,19 +106,29 @@ cat $txtdir/contentall.tmp |\
   sed -e 's/<noise>\(.\+\)<\/noise>/\1/g' |\
   sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
   perl local/mandarin_text_normalize.pl | \
-  python local/mandarin_segment.py |\
-  paste $txtdir/uttid - |\ 
-  > $txtdir/text
+  python local/mandarin_segment.py > $txtdir/text || exit 1;
 
-paste $txtdir/allid.tmp $txtdir/text | sed 's: $::' | awk '{if (NF>5) {print $0}}'  > $txtdir/all_1.tmp
+
+
+paste $txtdir/allid.tmp $txtdir/text | sed 's: $::' | awk '{if (NF>5) {print
+$0}}'  > $txtdir/all_1.tmp
+
+#awk '{print $1}' $txtdir/utt2spk.tmp > $txtdir/uttid
+#paste -d " " $txtdir/uttid $txtdir/text | awk 'NR==FNR{a[$3];next} $1 in a{print $1}' $txtdir/all_1.tmp -| > $txtdir/../text
+
+#mv $txtdir/../text $txtdir/text
+awk '{print $3}' $txtdir/all_1.tmp > $txtdir/uttid
+cut -d " " -f6- $txtdir/all_1.tmp > $txtdir/text
 
 awk '{$1="";print $0}' $txtdir/all_1.tmp | sed 's:^ ::' > $txtdir/../all
 
-cat $txtdir/utt2spk.tmp | sort -u > $txtdir/../utt2spk
-cat $txtdir/map.tmp | sort -u > $txtdir/../map
+cat $txtdir/utt2spk.tmp | awk 'NR==FNR{a[$1];next} $1 in a{print $0}' $txtdir/uttid - |\
+  sort -u > $txtdir/../utt2spk
+cat $txtdir/map.tmp | awk 'NR==FNR{a[$1];next} $2 in a{print $0}' $txtdir/uttid -|\
+  sort -u > $txtdir/../map
 
 sort -c $txtdir/../utt2spk
 
 utils/utt2spk_to_spk2utt.pl $txtdir/../utt2spk | sort -u > $txtdir/../spk2utt
 
-echo data prep text succeeded
+echo "Gale data prep text succeeded !"
