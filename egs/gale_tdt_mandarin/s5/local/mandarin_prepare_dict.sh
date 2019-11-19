@@ -10,7 +10,8 @@
 extra_text=
 
 . path.sh
-. utils/parse_options.sh
+. utils/parse_options.sh || exit 1;
+
 set -e -o pipefail
 if [ $# != 2 ]; then
   echo "Usage: local/prepare_dict.sh [--extra-text /path/to/extra-text] <dict-dir> <src-dir>"

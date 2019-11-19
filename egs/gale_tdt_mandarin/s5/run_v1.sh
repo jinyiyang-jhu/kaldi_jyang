@@ -38,11 +38,10 @@ TDT_TEXT=(
   /export/corpora5/LDC/LDC2005T16/
 )
 
-GIGA_TEXT=/export/corpora/LDC/LDC2003T09/gigaword_man/xin/
+GIGA_TEXT=/export/
 
 galeData=GALE/
 tdtData=TDT/
-gigaData=GIGA/
 
 set -e -o pipefail
 set -x
@@ -92,40 +91,50 @@ if [ $stage -le 3 ]; then
       $mfccdir/storage
   fi
   for x in train dev eval; do
-    #utils/fix_data_dir.sh $datadir/$x
+    utils/fix_data_dir.sh $datadir/$x
     steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj $train_nj \
       $datadir/$x exp/make_mfcc/gale/$x $mfccdir
     utils/fix_data_dir.sh $datadir/$x # some files fail to get mfcc for many reasons
     steps/compute_cmvn_stats.sh $datadir/$x exp/make_mfcc/gale/$x $mfccdir
   done
-  exit 0;
-# Let's create a subset with 10k segments to make quick flat-start training:
-utils/subset_data_dir.sh $datadir/train 10000 $datadir/train.10k || exit 1;
-utils/subset_data_dir.sh $datadir/train 50000 $datadir/train.50k || exit 1;
-utils/subset_data_dir.sh $datadir/train 100000 $datadir/train.100k || exit 1;
+  # Let's create a subset with 10k segments to make quick flat-start training:
+  utils/subset_data_dir.sh $datadir/train 10000 $datadir/train.10k || exit 1;
+  utils/subset_data_dir.sh $datadir/train 50000 $datadir/  train.50k || exit 1;
+  utils/subset_data_dir.sh $datadir/train 100000 $datadir/train.100k || exit 1;
+  utils/subset_data_dir.sh $datadir/train 200000 $datadir/train.200k || exit 1;
 
-# Train monophone models on a subset of the data, 10K segment
-# Note: the --boost-silence option should probably be omitted by default
-steps/train_mono.sh --nj $train_nj --cmd "$train_cmd" \
+  # Train monophone models on a subset of the data, 10K segment
+  # Note: the --boost-silence option should probably be omitted by default
+  steps/train_mono.sh --nj $train_nj --cmd "$train_cmd" \
   $datadir/train.10k data/lang_gale_tdt $expdir/mono || exit 1;
 
-# Get alignments from monophone system.
-steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
+  # Get alignments from monophone system.
+  steps/align_si.sh --nj $train_nj --cmd "$train_cmd" \
   $datadir/train.50k data/lang_gale_tdt $expdir/mono $expdir/mono_ali.50k || exit 1;
 
-# train tri1 [first triphone pass]
+  # Train tri1 [first triphone pass]
 steps/train_deltas.sh --cmd "$train_cmd" \
   2500 30000 $datadir/train.50k data/lang_gale_tdt $expdir/mono_ali.50k $expdir/tri1 || exit 1;
+  # Get alignments from tri1 system
+steps/align_si.sh --nj $train_nj --cmd "$train_cmd" \
+  $datadir/train.100k data/lang_gale_tdt $expdir/tri1
+  $expdir/tri1_ali.100k || exit 1;
+
+  # Train tri2a, which is deltas+delta+deltas
+  steps/train_deltas.sh --cmd "$train_cmd" \
+  3000 40000 $datadir/train.100k data/lang_gale_tdt $expdir/tri1_ali.100k exp/tri2a || exit 1;
+  # Get alignments from tri2a system
+  steps/align_si.sh --nj $train_nj --cmd "$train_cmd" \
+  $datadir/train.200k data/lang_gale_tdt exp/tri2a exp/tri2a_ali.200k || exit 1;
 fi
 
 if [ $stage -le 4 ]; then
   echo "Clean up TDT data"
-  cp -r data/local/tdt_mandarin data/tdt/train
 fi
 
 if [ $stage -le 5 ]; then
   echo "Expand the lexicon with Gigaword"
-  local/gigaword_prepare.sh $GIGA_TEXT $gigaData
+  local/gigaword_prepare.sh $GIGA_TEXT
   local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp data/local/giga_man_simp
   local/mandarin_merge_dict.sh data/local/dict_gale_tdt data/local/dict_giga_man_simp data/local/dict_gale_tdt_giga
 fi

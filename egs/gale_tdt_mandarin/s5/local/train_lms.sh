@@ -4,8 +4,8 @@
 # To be run from one directory above this script.
 ngram_order=4
 oov_sym="<UNK>"
-. path.sh
-. utils/parse_options.sh
+[ -f ./path.sh ] && . ./path.sh
+. parse_options.sh || exit 1;
 
 if [ $# != 4 ]; then
   echo "Usage: <lm-src-dir> <dict-dir> <lm-dir> <heldout>"
@@ -17,7 +17,8 @@ fi
 text=$1/text
 dict_dir=$2
 dir=$3
-heldout=$4
+dev_text=$4
+
 
 [ ! -d $dir ] && mkdir -p $dir && exit 1;
 [ ! -f $text ] && echo "$0: No such file $text" && exit 1;
@@ -55,10 +56,11 @@ cat $cleantext | awk -v wmap=$dir/word_map 'BEGIN{while((getline<wmap)>0)map[$1]
 cat $dir/word_map | awk '{print $1}' | cat - <(echo "<s>"; echo "</s>" ) \
 	> $dir/wordlist
 
-ngram-count -text $dir/text.no_oov -order $ngram_order -limit-vocab -vocab $dir/wordlist -unk \
+../../../tools/srilm/lm/bin/i686-m64/ngram-count -text $dir/text.no_oov -order $ngram_order -limit-vocab -vocab $dir/wordlist -unk \
    -map-unk "<UNK>" -kndiscount -interpolate -lm $dir/srilm.o${ngram_order}g.kn.gz
 
-ngram -lm $dir/srilm.o${ngram_order}g.kn.gz -ppl $heldout > $dir/ppl
+cut -d " " -f2- $dev_text > $dir/heldout
+../../../tools/srilm/lm/bin/i686-m64/ngram -lm $dir/srilm.o${ngram_order}g.kn.gz -ppl $dir/heldout > $dir/ppl
 # note: output is
 # $dir/${ngram_order}gram-mincount/lm_unpruned.gz
 echo train lm succeeded

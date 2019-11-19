@@ -3,19 +3,19 @@
 ngram_order=4
 oov_sym="<UNK>"
 extra_lm_dir=""
-. path.sh
-. utils/parse_options.sh
+[ -f ./path.sh ] && . ./path.sh
+. parse_options.sh || exit 1;
 
 if [ $# != 4 ]; then
   echo "Usage: [--ngram-order ] [--extra-lm-src ] <dict-dir> <src-dir> <lm-dir> <dev-dir>"
   echo "E.g. $0 --ngram-order 4 --oov-sym \"<UNK>\" --extra-lm
   \"data/local/gigaword_chinese\" data/local/dict data/local/train data/local/lm data/dev "
-  exit 1
+  exit 1;
 fi
 
 dict_dir=$1
 local_text_dir=$2
-lm_dir=$3_${ngram_order}gram
+lm_dir=$3
 heldout=$4/text
 
 # check if sri is installed or no
@@ -26,7 +26,7 @@ heldout=$4/text
 #  echo "Please install srilm first !"
 #  exit 1
 #fi
-
+ngram_path=../../../tools/srilm/lm/bin/i686-m64/
 echo "Building $ngram_order gram LM"
 [ ! -d $lm_dir ] && mkdir -p $lm_dir exit 1;
 
@@ -50,18 +50,18 @@ lm_dir_inter=${lm_dir}_interpolated
   echo "LM interpolation......"
   if [ ! -f $lm_dir_inter/${ngram_order}gram_mincount_mixed_lm.gz ]; then
     for d in $lm_dir $extra_text_dir/lm_${ngram_order}gram; do
-      ngram -debug 2 -order $ngram_order -unk -lm $d/${ngram_order}gram-mincount/lm_unpruned.gz \
+      $ngram_path/ngram -debug 2 -order $ngram_order -unk -lm $d/${ngram_order}gram-mincount/lm_unpruned.gz \
         -ppl $heldout > $d/${ngram_order}gram-mincount/lm.ppl ;
     done
     compute-best-mix $lm_dir/${ngram_order}gram-mincount/lm.ppl \
       $extra_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm.ppl > $lm_dir_inter/best-mix.ppl
     echo "local:extra=0.8:0.2" > $lm_dir_inter/mix.pair
-    ngram -order $ngram_order -unk -map-unk $oov_sym \
+    $ngram_path/ngram -order $ngram_order -unk -map-unk $oov_sym \
       -lm $lm_dir/${ngram_order}gram-mincount/lm_unpruned.gz -lambda 0.8 \
       -mix-lm $extra_text_dir/lm_${ngram_order}gram/${ngram_order}gram-mincount/lm_unpruned.gz \
       -write-lm $lm_dir_inter/${ngram_order}gram_mincount_mixed_lm.gz
 
-    ngram -debug 2 -order $ngram_order -unk \
+    $ngram_path/ngram -debug 2 -order $ngram_order -unk \
     -lm $lm_dir_inter/${ngram_order}gram_mincount_mixed_lm.gz \
     -ppl $heldout > $lm_dir_inter/lm.ppl
   fi
