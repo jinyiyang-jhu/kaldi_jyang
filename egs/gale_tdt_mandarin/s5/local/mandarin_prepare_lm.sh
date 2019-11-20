@@ -3,12 +3,13 @@
 ngram_order=4
 oov_sym="<UNK>"
 extra_lm_dir=""
+no_uttid="false"
 [ -f ./path.sh ] && . ./path.sh
 . parse_options.sh || exit 1;
 
 if [ $# != 4 ]; then
-  echo "Usage: [--ngram-order ] [--extra-lm-src ] <dict-dir> <src-dir> <lm-dir> <dev-dir>"
-  echo "E.g. $0 --ngram-order 4 --oov-sym \"<UNK>\" --extra-lm
+  echo "Usage: [ --no-uttid ] [--ngram-order ] [--extra-lm-src ] <dict-dir> <src-dir> <lm-dir> <dev-dir>"
+  echo "E.g. $0 --no-uttid "true" --ngram-order 4 --oov-sym \"<UNK>\" --extra-lm
   \"data/local/gigaword_chinese\" data/local/dict data/local/train data/local/lm data/dev "
   exit 1;
 fi
@@ -33,7 +34,14 @@ echo "Building $ngram_order gram LM"
 if [ ! -f $lm_dir/${ngram_order}gram-mincount/lm_unpruned.gz ]; then
   echo "Training LM with train text"
   [ ! -f $local_text_dir/text ] && echo "No $local_text_dir/text" && exit 1;
-	awk '{i=$2;for (n=3;n<=NF;++n){i=i" "$n;}print i}' $local_text_dir/text > $lm_dir/text
+
+  # If the first column of $local_text_dir/text is uttid, we need to remove
+  # them.
+  if [ $no_uttid == "false" ]; then 
+    awk '{i=$2;for (n=3;n<=NF;++n){i=i" "$n;}print i}' $local_text_dir/text > $lm_dir/text
+  else
+    cp $local_text_dir/text $lm_dir/text
+  fi
   local/train_lms.sh --ngram-order $ngram_order $lm_dir $dict_dir $lm_dir $heldout
 fi
 

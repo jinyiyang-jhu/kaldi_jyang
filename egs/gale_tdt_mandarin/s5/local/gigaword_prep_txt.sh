@@ -49,4 +49,4 @@ cat $giga_lang_dir/raw.text |\
   python local/mandarin_segment.py > $giga_lang_dir/filtered.text
 cat $giga_lang_dir/filtered.text |\
   python local/mandarin_segment.py > $giga_lang_dir/segmented.text
-
+mv $giga_lang_dir/segmented.text $giga_lang_dir/text
