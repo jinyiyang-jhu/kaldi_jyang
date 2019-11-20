@@ -48,9 +48,10 @@ cat $cleantext | awk '{for(n=1;n<=NF;n++) print $n; }' | \
 cat $dir/unigram.counts  | awk '{print $2}' | get_word_map.pl "<s>" "</s>" "<UNK>" > $dir/word_map \
     || exit 1;
 
-# note: ignore 1st field of train.txt, it's the utterance-id.
+# The first field of train.txt is not the utterance-id, since we remove them
+# earlier in the local/mandarin_prep_lm.sh
 cat $cleantext | awk -v wmap=$dir/word_map 'BEGIN{while((getline<wmap)>0)map[$1]=$2;}
-   { for(n=2;n<=NF;n++) { printf map[$n]; if(n<NF){ printf " "; } else { print ""; }}}' | gzip -c >$dir/train.gz \
+   { for(n=1;n<=NF;n++) { printf map[$n]; if(n<NF){ printf " "; } else { print ""; }}}' | gzip -c >$dir/train.gz \
     || exit 1;
 
 cat $dir/word_map | awk '{print $1}' | cat - <(echo "<s>"; echo "</s>" ) \
