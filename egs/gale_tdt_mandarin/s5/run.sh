@@ -30,6 +30,7 @@ GALE_TEXT=(
   /export/corpora/LDC/LDC2017T18/
 )
 
+
 TDT_AUDIO=(
   /export/corpora/LDC/LDC2001S93/
   /export/corpora/LDC/LDC2001S95/
@@ -84,6 +85,8 @@ if [ $stage -le 2 ]; then
   bash local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" \
     data/local/dict_gale_tdt data/local/gale/train data/local/gale/train/lm_4gram data/local/gale/dev
   local/gale_format_data.sh
+  local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
+    data/lang_gale_tdt data/lang_gale_test
 fi
 
 ############# Using GALE data to train cleaning up model for TDT #######
@@ -132,7 +135,7 @@ if [ $stage -le 5 ]; then
   	$expdir/tri1/graph_gale_test $datadir/eval $expdir/tri1/decode_gale_eval
 fi
 
-########################### Tri2b training ##############################
+########################### Tri2b training #############################
 if [ $stage -le 6 ]; then
 	steps/align_si.sh --nj $train_nj --cmd "$train_cmd" \
   	$datadir/train_10k data/lang_gale_tdt $expdir/tri1 $expdir/tri1_ali_10k || exit 1;
@@ -145,7 +148,7 @@ if [ $stage -le 6 ]; then
   	$expdir/tri2b/graph_gale_test $datadir/eval $expdir/tri2b/decode_gale_eval
 fi
 
-########################### Tri3b training ##############################
+########################### Tri3b training #############################
 if [ $stage -le 7 ]; then
 	steps/align_si.sh --nj $train_nj --cmd "$train_cmd" --use-graphs true \
   	$datadir/train_10k data/lang_gale_tdt $expdir/tri2b $expdir/tri2b_ali_10k || exit 1;
@@ -157,7 +160,7 @@ if [ $stage -le 7 ]; then
   	$expdir/tri3b/graph_gale_test $datadir/eval $expdir/tri3b/decode_gale_eval
 fi
 
-########################### Tri4b training ##############################
+########################### Tri4b training #############################
 if [ $stage -le 8 ]; then
 	steps/align_fmllr.sh --nj $train_nj --cmd "$train_cmd" \
     $datadir/train_100k data/lang_gale_tdt \
@@ -183,33 +186,21 @@ if [ $stage -le 9 ]; then
 
   utils/prepare_lang.sh data/local/dict_gale_tdt_reestimated \
                         "<UNK>" data/local/lang_gale_tdt_reestimated data/lang_gale_tdt_reestimated
-	local/format_lms.sh --src-dir data/lang data/local/lm
-	utils/build_const_arpa_lm.sh \
-    data/local/lm/lm_fglarge.arpa.gz data/lang data/lang_test_fglarge
+  local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
+    data/lang_gale_tdt_reestimated data/lang_gale_reestimated_test
 fi
 
+echo "Finished stage 9"
+exit 0
+######################### Train tri5b with all GALE data ###############
+if [ $stage -le 10 ]; then
+	steps/align_fmllr.sh --nj $train_nj --cmd "$train_cmd" \
+    $datadir/train data/lang_gale_tdt_reestimated \
+    $expdir/tri4b $expdir/tri4b_ali_ || exit 1;
 
-echo "Reestimate pronunciations"
-local/reestimation_lex.sh data/lang_gale_tdt_reest
-echo "Pruning lexicon"
-local/prune_lex.sh data/lang_gale_tdt_reest
-# tri2a decoding
-#utils/mkgraph.sh data/lang_gale_test $expdir/tri2a $expdir/tri2a/graph_gale_test || exit 1;
-#steps/decode.sh --nj $decode_nj --cmd "$decode_cmd" \
-#  $expdir/tri2a/graph_gale_test $datadir/eval $expdir/tri2a/decode_gale_eval &
+fi
 
-steps/align_si.sh --nj $train_nj --cmd "$train_cmd" \
-  $datadir/train_100k data/lang_gale_tdt_reest $expdir/tri2a exp/tri2a_ali_100k || exit 1;
-
-# train and decode tri2b [LDA+MLLT]
-steps/train_lda_mllt.sh --cmd "$train_cmd" 4000 50000 \
-  data/train data/lang exp/tri2a_ali exp/tri2b || exit 1;
-utils/mkgraph.sh data/lang_test exp/tri2b exp/tri2b/graph || exit 1;
-steps/decode.sh --nj $num_jobs_decode --cmd "$decode_cmd" exp/tri2b/graph data/dev exp/tri2b/decode &
-
-# Align all data with LDA+MLLT system (tri2b)
-steps/align_si.sh --nj $num_jobs --cmd "$train_cmd" \
-  --use-graphs true data/train data/lang exp/tri2b exp/tri2b_ali  || exit 1;
+local/prune_lex.sh data/lang_gale_tdt_reestimated
 
 if [ $stage -le 4 ]; then
   echo "Clean up TDT data"
