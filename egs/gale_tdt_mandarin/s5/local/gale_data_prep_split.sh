@@ -30,9 +30,12 @@ utils/filter_scp.pl --exclude -f 2 \
 mv $galeData/all $galeData/all.orig
 mv $galeData/all.nodup $galeData/all
 
-grep    -f <(cat local/gale_dev/test.LDC*) $galeData/all | grep -v -F -f local/gale_bad_utts  > $galeData/all.dev
+diff <(awk '{print $1}' GALE.backup/all | sort | uniq) \
+	<(awk '{print $1}' GALE.backup/wav.scp | sort | uniq) |\
+	 grep '>\|<' | cut -d " " -f2- > $galeData/bad_utts
+grep    -f <(cat local/gale_dev/test.LDC*) $galeData/all | grep -v -F -f $galeData/bad_utts  > $galeData/all.dev
 
-grep    -f <(cat local/gale_eval/test.LDC*) $galeData/all | grep -v -F -f local/gale_bad_utts  > $galeData/all.eval
+grep    -f <(cat local/gale_eval/test.LDC*) $galeData/all | grep -v -F -f $galeData/bad_utts  > $galeData/all.eval
 
 # Only parts of the eval transcriptions will be used. We select them from the given segmentation information
 mv $galeData/all.eval $galeData/all.eval.tmp
@@ -43,7 +46,7 @@ rm $galeData/all.eval.tmp
 
 grep -v -f <(cat local/gale_dev/test.LDC*) $galeData/all |\
   grep -v -f <(cat local/gale_eval/test.LDC*) |\
-  grep -v -F -f local/gale_bad_utts  > $galeData/all.train
+  grep -v -F -f $galeData/bad_utts  > $galeData/all.train
 
 cat $galeData/all.dev | awk '{print$2}' > $galeData/dev_utt_list
 cat $galeData/all.eval | awk '{print$2}' > $galeData/eval_utt_list
