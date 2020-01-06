@@ -63,7 +63,7 @@ if [ $stage -le 0 ]; then
   local/tdt_mandarin_data_prep_txt.sh  "${TDT_TEXT[@]}" $tdtData
   local/tdt_mandarin_data_prep_filter.sh $tdtData data/local/tdt_mandarin
 
-  # Merge transcripts from GALE and TDT for lexicon and LM training
+  ## Merge transcripts from GALE and TDT for lexicon and LM training
   mkdir -p data/local/gale_tdt_train
   cat data/local/gale/train/text data/local/tdt_mandarin/text > data/local/gale_tdt_train/text
 fi
@@ -132,7 +132,7 @@ if [ $stage -le 5 ]; then
   	2000 10000 $datadir/train_5k data/lang_gale_tdt $expdir/mono_ali_5k $expdir/tri1 || exit 1;
 	utils/mkgraph.sh data/lang_gale_test $expdir/tri1 $expdir/tri1/graph_gale_test || exit 1;
 	steps/decode.sh  --nj $decode_nj --cmd "$decode_cmd" \
-  	$expdir/tri1/graph_gale_test $datadir/eval $expdir/tri1/decode_gale_eval
+  	$expdir/tri1/graph_gale_test $datadir/dev $expdir/tri1/decode_gale_dev
 fi
 
 ########################### Tri2b training #############################
@@ -145,7 +145,7 @@ if [ $stage -le 6 ]; then
                           $datadir/train_10k data/lang_gale_tdt $expdir/tri1_ali_10k $expdir/tri2b
 	utils/mkgraph.sh data/lang_gale_test $expdir/tri2b $expdir/tri2b/graph_gale_test || exit 1;
 	steps/decode.sh  --nj $decode_nj --cmd "$decode_cmd" \
-  	$expdir/tri2b/graph_gale_test $datadir/eval $expdir/tri2b/decode_gale_eval
+  	$expdir/tri2b/graph_gale_test $datadir/dev $expdir/tri2b/decode_gale_dev
 fi
 
 ########################### Tri3b training #############################
@@ -154,10 +154,10 @@ if [ $stage -le 7 ]; then
   	$datadir/train_10k data/lang_gale_tdt $expdir/tri2b $expdir/tri2b_ali_10k || exit 1;
   echo "`date -u`: Tri3b trainign with GALE data"
 	steps/train_sat.sh --cmd "$train_cmd" 2500 15000 \
-                     $datadir/train_10k data/lang_gale_tdt $expdir/tri2b_ali_10k exp/tri3b
+                     $datadir/train_10k data/lang_gale_tdt $expdir/tri2b_ali_10k $expdir/tri3b
 	utils/mkgraph.sh data/lang_gale_test $expdir/tri3b $expdir/tri3b/graph_gale_test || exit 1;
 	steps/decodei_fmllr.sh  --nj $decode_nj --cmd "$decode_cmd" \
-  	$expdir/tri3b/graph_gale_test $datadir/eval $expdir/tri3b/decode_gale_eval
+  	$expdir/tri3b/graph_gale_test $datadir/dev $expdir/tri3b/decode_gale_dev
 fi
 
 ########################### Tri4b training #############################
@@ -168,54 +168,84 @@ if [ $stage -le 8 ]; then
   echo "`date -u`: Tri4b trainign with GALE data"
 	steps/train_sat.sh  --cmd "$train_cmd" 4200 40000 \
                       $datadir/train_100k data/lang_gale_tdt \
-                      $expdir/tri3b_ali_100k exp/tri4b
+                      $expdir/tri3b_ali_100k $expdir/tri4b
 	utils/mkgraph.sh data/lang_gale_test $expdir/tri4b $expdir/tri4b/graph_gale_test || exit 1;
   steps/decode_fmllr.sh  --nj $decode_nj --cmd "$decode_cmd" \
-  	$expdir/tri4b/graph_gale_test $datadir/eval $expdir/tri4b/decode_gale_eval &
+  	$expdir/tri4b/graph_gale_test $datadir/dev $expdir/tri4b/decode_gale_dev
 fi
 
 ######################### Re-create lang directory######################
 # We want to add pronunciation probabilities to lexicon, using the  previously trained model.
 if [ $stage -le 9 ]; then
 	steps/get_prons.sh --cmd "$train_cmd" \
-                     data/train_100k data/lang_gale_tdt exp/tri4b
+                     $datadir/train_100k data/lang_gale_tdt $expdir/tri4b
   utils/dict_dir_add_pronprobs.sh --max-normalize true \
                                   data/local/dict_gale_tdt \
                                   $expdir/tri4b/pron_counts_nowb.txt $expdir/tri4b/sil_counts_nowb.txt \
                                   $expdir/tri4b/pron_bigram_counts_nowb.txt data/local/dict_gale_tdt_reestimated
-
   utils/prepare_lang.sh data/local/dict_gale_tdt_reestimated \
                         "<UNK>" data/local/lang_gale_tdt_reestimated data/lang_gale_tdt_reestimated
   local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
-    data/lang_gale_tdt_reestimated data/lang_gale_reestimated_test
+    data/lang_gale_tdt_reestimated data/lang_gale_tdt_reestimated_test
 fi
 
-echo "Finished stage 9"
-exit 0
 ######################### Train tri5b with all GALE data ###############
 if [ $stage -le 10 ]; then
 	steps/align_fmllr.sh --nj $train_nj --cmd "$train_cmd" \
     $datadir/train data/lang_gale_tdt_reestimated \
-    $expdir/tri4b $expdir/tri4b_ali_ || exit 1;
+    $expdir/tri4b $expdir/tri4b_ali_train || exit 1;
 
+	steps/train_sat.sh  --cmd "$train_cmd" 5000 100000 \
+    $datadir/train data/lang_gale_tdt_reestimated \
+		$expdir/tri4b_ali_train $expdir/tri5b || exit 1;
 fi
 
-local/prune_lex.sh data/lang_gale_tdt_reestimated
-
-if [ $stage -le 4 ]; then
+if [ $stage -le 11 ]; then
   echo "Clean up TDT data"
-  cp -r data/local/tdt_mandarin data/tdt/train
+  mkdir -p data/tdt || exit 1;
+  mfccdir=mfcc/tdt
+  cp -r data/local/tdt_mandarin/* data/tdt
+  steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj $train_nj \
+      data/tdt exp/make_mfcc/tdt $mfccdir
+  utils/fix_data_dir.sh data/tdt # some files fail to get mfcc for many reasons
+  steps/compute_cmvn_stats.sh data/tdt exp/make_mfcc/tdt $mfccdir
+  local/tdt_cleanup.sh --nj $train_nj data/tdt data/lang_gale_tdt_reestimated \
+    $expdir/tri5b $expdir/tri5b_tdt_cleanup data/tdt_cleanup
+  sed -i 's/<UNK>//g' data/tdt_cleanup/text
+  steps/compute_cmvn_stats.sh data/tdt_cleanup exp/make_mfcc/tdt_cleanup ${mfccdir}_cleanup
 fi
 
-if [ $stage -le 5 ]; then
+datadir=data/train_gale_tdt_cleanup
+expdir=exp
+if [ $stage -le 12 ]; then
+  echo "Combine GALE and TDT cleaned"
+	utils/combine_data.sh \
+    $datadir data/gale/train data/tdt_cleanup
+
+	steps/align_fmllr.sh --nj $train_nj --cmd "$train_cmd" \
+    $datadir data/lang_gale_tdt_reestimated \
+    exp/gale/tri5b exp/gale/tri5b_ali_gale_tdt_cleanup || exit 1;
+
+	steps/train_quick.sh --cmd "$train_cmd" \
+    7000 150000 $datadir data/lang_gale_tdt_reestimated \
+		exp/gale/tri5b_ali_gale_tdt_cleanup exp/tri6b
+  utils/mkgraph.sh data/lang_gale_tdt_reestimated_test exp/tri6b exp/tri6b/graph_gale_tdt_reestimated_test || exit 1;
+  steps/decode_fmllr.sh  --nj $decode_nj --cmd "$decode_cmd" \
+    exp/tri6b/graph_gale_tdt_reestimated_test data/gale/dev exp/tri6b/decode_gale_dev
+fi
+
+echo "stage 12 finished"
+exit 0
+if [ $stage -le 13 ]; then
   echo "Expand the lexicon with Gigaword"
   local/gigaword_prepare.sh $GIGA_TEXT $gigaData
   local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp data/local/giga_man_simp
   local/mandarin_merge_dict.sh data/local/dict_gale_tdt data/local/dict_giga_man_simp data/local/dict_gale_tdt_giga
+  python3 local/le
 fi
 
 
-if [ $stage -le 5 ]; then
+if [ $stage -le 14 ]; then
   echo "Prepare LM with all data"
   # Train LM with gigaword
   local/mandarin_prepare_lm.sh --no-uttid "true" --ngram-order 4 --oov-sym "<UNK>" \
