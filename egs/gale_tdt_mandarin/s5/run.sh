@@ -228,10 +228,11 @@ if [ $stage -le 12 ]; then
 
 	steps/train_quick.sh --cmd "$train_cmd" \
     7000 150000 $datadir data/lang_gale_tdt_reestimated \
-		exp/gale/tri5b_ali_gale_tdt_cleanup exp/tri6b
-  utils/mkgraph.sh data/lang_gale_tdt_reestimated_test exp/tri6b exp/tri6b/graph_gale_tdt_reestimated_test || exit 1;
+		exp/gale/tri5b_ali_gale_tdt_cleanup exp/tri6b_cleanup
+  utils/mkgraph.sh data/lang_gale_tdt_reestimated_test exp/tri6b_cleanup \
+    exp/tri6b_cleanup/graph_gale_tdt_reestimated_test || exit 1;
   steps/decode_fmllr.sh  --nj $decode_nj --cmd "$decode_cmd" \
-    exp/tri6b/graph_gale_tdt_reestimated_test data/gale/dev exp/tri6b/decode_gale_dev
+    exp/tri6b_cleanup/graph_gale_tdt_reestimated_test data/gale/dev exp/tri6b_cleanup/decode_gale_dev
 fi
 
 if [ $stage -le 13 ]; then
@@ -255,12 +256,12 @@ fi
 if [ $stage -le 14 ]; then
   echo "Prepare LM with all data"
   # Train LM with GALE + TDT
-  #local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
-  #  data/local/dict_large data/local/gale_tdt_train data/local/gale_tdt_lm_4gram data/local/gale/dev
+  local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
+    data/local/dict_large data/local/gale_tdt_train data/local/gale_tdt_lm_4gram data/local/gale/dev
 
   # Train LM with gigaword
-  #local/mandarin_prepare_lm.sh --no-uttid "true" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
-  #  data/local/dict_large GIGA/ data/local/giga_lm_4gram data/local/gale/dev
+  local/mandarin_prepare_lm.sh --no-uttid "true" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
+    data/local/dict_large GIGA/ data/local/giga_lm_4gram data/local/gale/dev
 
   # LM interpolation
   local/mandarin_mix_lm.sh --ngram-order 4 --oov-sym "<UNK>" --prune-thres "1e-9" \
