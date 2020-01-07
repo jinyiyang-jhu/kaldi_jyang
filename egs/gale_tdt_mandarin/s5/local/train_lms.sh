@@ -4,12 +4,13 @@
 # To be run from one directory above this script.
 ngram_order=4
 oov_sym="<UNK>"
+prune_thres=1e-9
 [ -f ./path.sh ] && . ./path.sh
 . parse_options.sh || exit 1;
 
 if [ $# != 4 ]; then
-  echo "Usage: <lm-src-dir> <dict-dir> <lm-dir> <heldout>"
-  echo "E.g. $0 --ngram-order 4 data/local/train data/local/dict
+  echo "Usage: [--ngram-order] [--prune-thres] <lm-src-dir> <dict-dir> <lm-dir> <heldout>"
+  echo "E.g. $0 --ngram-order 4 --prune-thres 1e-9 data/local/train data/local/dict
   data/local/lm_no_extra datal/local/dev/text"
   exit 1
 fi
@@ -48,20 +49,14 @@ cat $cleantext | awk '{for(n=1;n<=NF;n++) print $n; }' | \
 cat $dir/unigram.counts  | awk '{print $2}' | get_word_map.pl "<s>" "</s>" "<UNK>" > $dir/word_map \
     || exit 1;
 
-# The first field of train.txt is not the utterance-id, since we remove them
-# earlier in the local/mandarin_prep_lm.sh
-cat $cleantext | awk -v wmap=$dir/word_map 'BEGIN{while((getline<wmap)>0)map[$1]=$2;}
-   { for(n=1;n<=NF;n++) { printf map[$n]; if(n<NF){ printf " "; } else { print ""; }}}' | gzip -c >$dir/train.gz \
-    || exit 1;
-
 cat $dir/word_map | awk '{print $1}' | cat - <(echo "<s>"; echo "</s>" ) \
 	> $dir/wordlist
 
-../../../tools/srilm/lm/bin/i686-m64/ngram-count -text $dir/text.no_oov -order $ngram_order -limit-vocab -vocab $dir/wordlist -unk \
-   -map-unk "<UNK>" -kndiscount -interpolate -lm $dir/srilm.o${ngram_order}g.kn.gz
+ngram-count -text $dir/text.no_oov -order $ngram_order -limit-vocab -vocab $dir/wordlist -unk \
+   -map-unk "<UNK>" -kndiscount -interpolate -prune $prune_thres -lm $dir/srilm.o${ngram_order}g.kn.gz
 
 cut -d " " -f2- $dev_text > $dir/heldout
-../../../tools/srilm/lm/bin/i686-m64/ngram -lm $dir/srilm.o${ngram_order}g.kn.gz -ppl $dir/heldout > $dir/ppl
+ngram -lm $dir/srilm.o${ngram_order}g.kn.gz -ppl $dir/heldout > $dir/ppl
 # note: output is
 # $dir/${ngram_order}gram-mincount/lm_unpruned.gz
 echo train lm succeeded

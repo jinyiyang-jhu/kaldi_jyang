@@ -82,7 +82,7 @@ fi
 ########################### LM preparation for GALE ####################
 if [ $stage -le 2 ]; then
   echo "`date -u`: Creating LM for GALE"
-  bash local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" \
+  local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
     data/local/dict_gale_tdt data/local/gale/train data/local/gale/train/lm_4gram data/local/gale/dev
   local/gale_format_data.sh
   local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
@@ -234,22 +234,39 @@ if [ $stage -le 12 ]; then
     exp/tri6b/graph_gale_tdt_reestimated_test data/gale/dev exp/tri6b/decode_gale_dev
 fi
 
-echo "stage 12 finished"
-exit 0
 if [ $stage -le 13 ]; then
   echo "Expand the lexicon with Gigaword"
   local/gigaword_prepare.sh $GIGA_TEXT $gigaData
   local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp data/local/giga_man_simp
-  local/mandarin_merge_dict.sh data/local/dict_gale_tdt data/local/dict_giga_man_simp data/local/dict_gale_tdt_giga
-  python3 local/le
+  utils/prepare_lang.sh data/local/dict_giga_man_simp "<UNK>" \
+    data/local/lang_giga_man_simp data/lang_giga_man_simp
+  python3 local/prune_lex.py data/local/dict_giga_man_simp/lexiconp.txt | \
+    sort > data/local/dict_giga_man_simp/lexiconp.tmp
+  mv data/local/dict_giga_man_simp/lexiconp.tmp data/local/dict_giga_man_simp/lexiconp.txt
+  local/mandarin_merge_dict.sh data/local/dict_gale_tdt_reestimated data/local/dict_giga_man_simp data/local/dict_large
+  python3 local/prune_lex.py data/local/dict_large/lexiconp.txt | \
+    sort > data/local/dict_large/lexiconp.tmp
+  mv data/local/dict_large/lexiconp.tmp data/local/dict_large/lexiconp.txt
+  utils/prepare_lang.sh data/local/dict_large "<UNK>" \
+    data/local/lang_large data/lang_large
 fi
 
 
 if [ $stage -le 14 ]; then
   echo "Prepare LM with all data"
-  # Train LM with gigaword
-  local/mandarin_prepare_lm.sh --no-uttid "true" --ngram-order 4 --oov-sym "<UNK>" \
-  data/local/dict_large GIGA/ data/local/giga_lm_4gram 
+  # Train LM with GALE + TDT
+  #local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
+  #  data/local/dict_large data/local/gale_tdt_train data/local/gale_tdt_lm_4gram data/local/gale/dev
 
+  # Train LM with gigaword
+  #local/mandarin_prepare_lm.sh --no-uttid "true" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
+  #  data/local/dict_large GIGA/ data/local/giga_lm_4gram data/local/gale/dev
+
+  # LM interpolation
+  local/mandarin_mix_lm.sh --ngram-order 4 --oov-sym "<UNK>" --prune-thres "1e-9" \
+    data/local/gale_tdt_lm_4gram data/local/giga_lm_4gram data/local/lm_large_4gram data/local/gale/dev
+  local/mandarin_format_lms.sh data/local/lm_large_4gram/srilm.o4g.kn.gz \
+    data/lang_large data/lang_large_test
+fi
 
 
