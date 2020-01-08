@@ -270,4 +270,5 @@ if [ $stage -le 14 ]; then
     data/lang_large data/lang_large_test
 fi
 
-
+# From here, we train a tdnnf model
+local/chain/run_tdnn.sh

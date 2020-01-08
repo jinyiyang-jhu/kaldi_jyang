@@ -15,7 +15,7 @@ lang_affix="_large_test"
 # are just hardcoded at this level, in the commands below.
 affix=1d
 tree_affix=
-train_stage=-1
+train_stage=-8
 get_egs_stage=-10
 decode_iter=
 
@@ -56,12 +56,14 @@ fi
 # nnet3 setup, and you can skip them by setting "--stage 11" if you have already
 # run those things.
 
-#local/nnet3/run_ivector_common.sh --stage $stage \
-#                                  --train-set $train_set \
-#                                  --gmm exp/$gmm \
-#                                  --num-threads-ubm 6 --num-processes 3 \
-#                                  --nnet3-affix "$nnet3_affix" || exit 1;
-
+if [ $stage -le 12 ]; then
+  echo "Training and extracting ivectors"
+  local/nnet3/run_ivector_common.sh --stage $stage \
+                                    --train-set $train_set \
+                                    --gmm exp/$gmm \
+                                    --num-threads-ubm 6 --num-processes 3 \
+                                    --nnet3-affix "$nnet3_affix" || exit 1;
+fi
 
 
 # if we are using the speed-perturbed data we need to generate
@@ -73,17 +75,19 @@ for f in $gmm_dir/final.mdl $train_data_dir/feats.scp $train_ivector_dir/ivector
 done
 
 # Please take this as a reference on how to specify all the options of
-# local/chain/run_chain_common.sh
-local/chain/run_chain_common.sh --stage $stage \
-                                --gmm-dir $gmm_dir \
-                                --ali-dir $ali_dir \
-                                --lores-train-data-dir ${lores_train_data_dir} \
-                                --lang $lang \
-                                --lang-original data/lang${lang_affix} \
-                                --lat-dir $lat_dir \
-                                --num-leaves 7000 \
-                                --ali-nj $ali_nj \
-                                --tree-dir $tree_dir || exit 1;
+
+if [ $stage -le 13 ]; then
+  local/chain/run_chain_common.sh --stage $stage \
+                                  --gmm-dir $gmm_dir \
+                                  --ali-dir $ali_dir \
+                                  --lores-train-data-dir ${lores_train_data_dir} \
+                                  --lang $lang \
+                                  --lang-original data/lang${lang_affix} \
+                                  --lat-dir $lat_dir \
+                                  --num-leaves 7000 \
+                                  --ali-nj $ali_nj \
+                                  --tree-dir $tree_dir || exit 1;
+fi
 
 if [ $stage -le 14 ]; then
   echo "$0: creating neural net configs using the xconfig parser";
