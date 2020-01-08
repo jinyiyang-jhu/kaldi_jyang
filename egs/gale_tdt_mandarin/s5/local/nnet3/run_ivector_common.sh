@@ -159,8 +159,8 @@ if [ $stage -le 5 ]; then
 
   for data in dev eval; do
     steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" --nj $nj \
-      data/${data}_hires exp/nnet3${nnet3_affix}/extractor \
-      exp/nnet3${nnet3_affix}/ivectors_${data}_hires
+      data/${data}_hires_nopitch exp/nnet3${nnet3_affix}/extractor \
+      exp/nnet3${nnet3_affix}/ivectors_${data}_hires_nopitch
   done
 fi
 

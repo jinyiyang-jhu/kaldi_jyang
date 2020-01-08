@@ -11,12 +11,14 @@ stage=11
 # been named for convenience
 gmm_dir=
 ali_dir=
+ali_nj=
 lores_train_data_dir=
-
+lang_original=
 num_leaves=6000
 
 # output directory names. They are also compulsory.
 lang=
+lang_original=
 lat_dir=
 tree_dir=
 # End configuration section.
@@ -40,7 +42,7 @@ if [ $stage -le 11 ]; then
   # topo file. [note, it really has two states.. the first one is only repeated
   # once, the second one has zero or more repeats.]
   if [ -d $lang ]; then
-    if [ $lang/L.fst -nt data/lang/L.fst ]; then
+    if [ $lang/L.fst -nt $lang_original/L.fst ]; then
       echo "$0: $lang already exists, not overwriting it; continuing"
     else
       echo "$0: $lang already exists and seems to be older than data/lang..."
@@ -48,7 +50,7 @@ if [ $stage -le 11 ]; then
       exit 1;
     fi
   else
-    cp -r data/lang $lang
+    cp -r $lang_original $lang
     silphonelist=$(cat $lang/phones/silence.csl) || exit 1;
     nonsilphonelist=$(cat $lang/phones/nonsilence.csl) || exit 1;
     # Use our special topology... note that later on may have to tune this
@@ -61,7 +63,7 @@ if [ $stage -le 12 ]; then
   # Get the alignments as lattices (gives the chain training more freedom).
   # use the same num-jobs as the alignments
   nj=$(cat ${ali_dir}/num_jobs) || exit 1;
-  steps/align_fmllr_lats.sh --nj $nj --cmd "$train_cmd" ${lores_train_data_dir} \
+  steps/align_fmllr_lats.sh --nj $ali_nj --cmd "$train_cmd" ${lores_train_data_dir} \
     $lang $gmm_dir $lat_dir
   rm $lat_dir/fsts.*.gz # save space
 fi

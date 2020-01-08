@@ -7,7 +7,7 @@ stage=-1
 decode_nj=60
 ali_nj=80
 train_set=train_gale_tdt_cleanup
-gmm=exp/tri6b_cleanup
+gmm=tri6b_cleanup
 nnet3_affix=_cleanup
 lang_affix="_large_test"
 
@@ -56,11 +56,11 @@ fi
 # nnet3 setup, and you can skip them by setting "--stage 11" if you have already
 # run those things.
 
-local/nnet3/run_ivector_common.sh --stage $stage \
-                                  --train-set $train_set \
-                                  --gmm $gmm \
-                                  --num-threads-ubm 6 --num-processes 3 \
-                                  --nnet3-affix "$nnet3_affix" || exit 1;
+#local/nnet3/run_ivector_common.sh --stage $stage \
+#                                  --train-set $train_set \
+#                                  --gmm exp/$gmm \
+#                                  --num-threads-ubm 6 --num-processes 3 \
+#                                  --nnet3-affix "$nnet3_affix" || exit 1;
 
 
 
@@ -77,12 +77,12 @@ done
 local/chain/run_chain_common.sh --stage $stage \
                                 --gmm-dir $gmm_dir \
                                 --ali-dir $ali_dir \
-                                --ali-nj $ali_nj \
                                 --lores-train-data-dir ${lores_train_data_dir} \
                                 --lang $lang \
                                 --lang-original data/lang${lang_affix} \
                                 --lat-dir $lat_dir \
                                 --num-leaves 7000 \
+                                --ali-nj $ali_nj \
                                 --tree-dir $tree_dir || exit 1;
 
 if [ $stage -le 14 ]; then
@@ -189,7 +189,7 @@ fi
 echo "Decoding "
 iter_opts=
 for t in dev eval; do
-  ${t}_ivector_dir=exp/nnet3${nnet3_affix}/ivectors_${t}_hires
+  ${t}_ivector_dir=exp/nnet3${nnet3_affix}/ivectors_${t}_hires_nopitch
   steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
 	  --nj $decode_nj --cmd "$decode_cmd" $iter_opts \
 	  --online-ivector-dir ${t}_ivector_dir \
