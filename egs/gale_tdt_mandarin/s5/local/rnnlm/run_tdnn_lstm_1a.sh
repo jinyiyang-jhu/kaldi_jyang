@@ -3,13 +3,14 @@
 # Copyright 2012  Johns Hopkins University (author: Daniel Povey)
 #           2018  Ke Li
 
+
 # Begin configuration section.
 
 dir=exp/rnnlm_lstm_1a
 embedding_dim=1024
 lstm_rpd=256
 lstm_nrpd=256
-stage=4
+stage=-10
 train_stage=-10
 epochs=4
 
@@ -19,7 +20,7 @@ run_nbest_rescore=true
 run_backward_rnnlm=false
 ac_model_dir=exp/chain_cleanup/tdnn_1d_sp
 decode_dir_suffix=rnnlm_1a
-ngram_order=3 # approximate the lattice-rescoring by limiting the max-ngram-order
+ngram_order=4 # approximate the lattice-rescoring by limiting the max-ngram-order
               # if it's set, it merges histories in the lattice if they share
               # the same ngram history and this prevents the lattice from 
               # exploding exponentially
@@ -28,12 +29,12 @@ pruned_rescore=true
 . ./cmd.sh
 . ./utils/parse_options.sh
 
-text=data/local/lm_4gram/lm_text_train_with_giga.gz
-lexicon=data/lang_with_giga_test/words.txt
+text=data/local/lm_large_4gram/train_text.gz
+lexicon=data/lang_large_test/words.txt
 text_dir=data/rnnlm/text
 mkdir -p $dir/config
 set -e
-
+echo "RNNLM training finished"
 for f in $lexicon; do
   [ ! -f $f ] && \
     echo "$0: expected file $f to exist; search for run.sh in run.sh" && exit 1
@@ -98,8 +99,7 @@ if [ $stage -le 3 ]; then
                        --cmd "$train_cmd" $dir
 fi
 
-echo "Finish RNNLM training !"
-
+echo "RNNLM training finished"
 if [ $stage -le 4 ] && $run_lat_rescore; then
   echo "$0: Perform lattice-rescoring on $ac_model_dir"
 #  LM=tgsmall # if using the original 3-gram G.fst as old lm
@@ -107,30 +107,30 @@ if [ $stage -le 4 ] && $run_lat_rescore; then
   if $pruned_rescore; then
     pruned=_pruned
   fi
-  LM="with_giga_large_lex"
+  LM="with_giga_test"
   for decode_set in dev vast_eval; do
     decode_dir=${ac_model_dir}/decode_${decode_set}_hires_${LM}
     # Lattice rescoring
     rnnlm/lmrescore$pruned.sh \
         --cmd "$decode_cmd --mem 8G" \
         --weight 0.45 --max-ngram-order $ngram_order \
-        data/lang_with_giga_decode $dir \
+        data/lang_${LM} $dir \
         data/${decode_set}_hires ${decode_dir} \
-        ${decode_dir}_${decode_dir_suffix}_rescore
+        $ac_model_dir/decode_${decode_set}_${LM}_${decode_dir_suffix}_rescore
   done
 fi
 
 if [ $stage -le 5 ] && $run_nbest_rescore; then
   echo "$0: Perform nbest-rescoring on $ac_model_dir"
-  LM="with_giga_large_lex"
+  LM="with_giga_test"
   for decode_set in dev vast_eval; do
     decode_dir=${ac_model_dir}/decode_${decode_set}_hires_${LM}
     # Nbest rescoring
     rnnlm/lmrescore_nbest.sh \
         --cmd "$decode_cmd --mem 8G" --N 20 \
-        0.4 data/lang_with_giga_decode $dir \
+        0.4 data/lang_${LM} $dir \
         data/${decode_set}_hires ${decode_dir} \
-        ${decode_dir}_${decode_dir_suffix}_nbest_rescore
+        $ac_model_dir/decode_${decode_set}_${LM}_${decode_dir_suffix}_nbest_rescore
   done
 fi
 
