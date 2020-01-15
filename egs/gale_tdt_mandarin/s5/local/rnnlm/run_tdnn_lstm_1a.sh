@@ -25,7 +25,7 @@ ngram_order=4 # approximate the lattice-rescoring by limiting the max-ngram-orde
               # the same ngram history and this prevents the lattice from 
               # exploding exponentially
 pruned_rescore=true
-
+. path.sh
 . ./cmd.sh
 . ./utils/parse_options.sh
 
@@ -34,7 +34,6 @@ lexicon=data/lang_large_test/words.txt
 text_dir=data/rnnlm/text
 mkdir -p $dir/config
 set -e
-echo "RNNLM training finished"
 for f in $lexicon; do
   [ ! -f $f ] && \
     echo "$0: expected file $f to exist; search for run.sh in run.sh" && exit 1

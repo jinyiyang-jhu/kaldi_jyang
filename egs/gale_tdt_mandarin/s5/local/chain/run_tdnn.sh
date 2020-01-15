@@ -193,10 +193,10 @@ fi
 echo "Decoding "
 iter_opts=
 for t in dev eval; do
-  ${t}_ivector_dir=exp/nnet3${nnet3_affix}/ivectors_${t}_hires_nopitch
+  ivector_dir=exp/nnet3${nnet3_affix}/ivectors_${t}_hires_nopitch
   steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
 	  --nj $decode_nj --cmd "$decode_cmd" $iter_opts \
-	  --online-ivector-dir ${t}_ivector_dir \
-	  $graph_dir data/${t}_hires $dir/decode_${t}_with_giga_test || exit 1
-
+	  --online-ivector-dir "$ivector_dir" \
+	  $graph_dir data/${t}_hires $dir/decode_${t}_large_test || exit 1
+done
 exit 0;

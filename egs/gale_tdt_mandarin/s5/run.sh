@@ -272,3 +272,6 @@ fi
 
 # From here, we train a tdnnf model
 local/chain/run_tdnn.sh
+
+# Train RNNLM
+cat local/gale_tdt_lm_4gram/text data/local/giga_lm_4gram/text | gzip > data/local/lm_large_4gram/train_text.gz
