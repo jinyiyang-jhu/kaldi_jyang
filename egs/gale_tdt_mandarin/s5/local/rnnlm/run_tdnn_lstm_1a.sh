@@ -106,9 +106,9 @@ if [ $stage -le 4 ] && $run_lat_rescore; then
   if $pruned_rescore; then
     pruned=_pruned
   fi
-  LM="with_giga_test"
-  for decode_set in dev vast_eval; do
-    decode_dir=${ac_model_dir}/decode_${decode_set}_hires_${LM}
+  LM="large_test"
+  for decode_set in dev eval; do
+    decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
     # Lattice rescoring
     rnnlm/lmrescore$pruned.sh \
         --cmd "$decode_cmd --mem 8G" \
@@ -121,9 +121,9 @@ fi
 
 if [ $stage -le 5 ] && $run_nbest_rescore; then
   echo "$0: Perform nbest-rescoring on $ac_model_dir"
-  LM="with_giga_test"
-  for decode_set in dev vast_eval; do
-    decode_dir=${ac_model_dir}/decode_${decode_set}_hires_${LM}
+  LM="large_test"
+  for decode_set in dev eval; do
+    decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
     # Nbest rescoring
     rnnlm/lmrescore_nbest.sh \
         --cmd "$decode_cmd --mem 8G" --N 20 \

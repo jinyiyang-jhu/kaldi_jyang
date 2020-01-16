@@ -2,6 +2,7 @@
 
 # Copyright 2014 (author: Ahmed Ali, Hainan Xu)
 # Copyright 2016 Johns Hopkins Univeersity (author: Jan "Yenda" Trmal)
+# Copyright 2019 Johns Hopkins Univeersity (author: Jinyi Yang)
 # Apache 2.0
 
 if [ $# -ne 2 ]; then
@@ -71,15 +72,6 @@ for x in dev eval train; do
  awk '{print $2 " " $1 " " $3 " " $4}' $file  | sort -u > $outdir/segments
  awk '{printf $2 " "; for (i=5; i<=NF; i++) {printf $i " "} printf "\n"}' $file | sort -u > $outdir/text
 done
-
-#cat local/gale_eval/test.*.segment > $dir/eval/segments.dur
-#mv $dir/eval/segments $dir/eval/segments.tmp
-#awk 'NR==FNR{a[$1$2$3];next} $2$3$4 in a {print $0}' $dir/eval/segments.dur $dir/eval/segments.tmp > $dir/eval/segments
-#rm $dir/eval/segments.tmp
-
-#mv $dir/eval/text $dir/eval/text.tmp
-#awk 'NR==FNR{a[$1];next} $1 in a{print $0}' $dir/eval/segments $dir/eval/text.tmp > $dir/eval/text
-#rm $dir/eval/text.tmp
 
 cat $dir/dev/segments | awk '{print$2}' | sort -u > $galeData/dev.wav.list
 cat $dir/eval/segments | awk '{print$2}' | sort -u > $galeData/eval.wav.list

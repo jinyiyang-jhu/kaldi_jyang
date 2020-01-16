@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright 2019 Johns Hopkins Univeersity (author: Jinyi Yang)
+# Apache 2.0
+
 if [ $# != 2 ]; then
   echo "$0 <gigaword-dir> <giga-lang-dir>"
   exit 0;
