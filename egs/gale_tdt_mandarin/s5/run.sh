@@ -83,7 +83,6 @@ if [ $stage -le 2 ]; then
   echo "`date -u`: Creating LM for GALE"
   local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
     data/local/dict_gale_tdt data/local/gale/train data/local/gale/train/lm_4gram data/local/gale/dev
-  local/gale_format_data.sh
   local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
     data/lang_gale_tdt data/lang_gale_test
 fi
@@ -240,10 +239,9 @@ if [ $stage -le 13 ]; then
   local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp data/local/giga_man_simp
   utils/prepare_lang.sh data/local/dict_giga_man_simp "<UNK>" \
     data/local/lang_giga_man_simp data/lang_giga_man_simp
-  python3 local/prune_lex.py data/local/dict_giga_man_simp/lexiconp.txt | \
-    sort > data/local/dict_giga_man_simp/lexiconp.tmp
-  mv data/local/dict_giga_man_simp/lexiconp.tmp data/local/dict_giga_man_simp/lexiconp.txt
+  # Merge the previous dictionary with GIGAWORD dictionary
   local/mandarin_merge_dict.sh data/local/dict_gale_tdt_reestimated data/local/dict_giga_man_simp data/local/dict_large
+  # Prune the lexicon for multi-pronunciation words
   python3 local/prune_lex.py data/local/dict_large/lexiconp.txt | \
     sort > data/local/dict_large/lexiconp.tmp
   mv data/local/dict_large/lexiconp.tmp data/local/dict_large/lexiconp.txt
