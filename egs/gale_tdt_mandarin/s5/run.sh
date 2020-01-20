@@ -1,7 +1,7 @@
 #!/bin/bash
 
-
-
+# Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
+# Apache 2.0
 
 train_nj=80
 decode_nj=60
@@ -29,7 +29,6 @@ GALE_TEXT=(
   /export/corpora/LDC/LDC2016T12/
   /export/corpora/LDC/LDC2017T18/
 )
-
 
 TDT_AUDIO=(
   /export/corpora/LDC/LDC2001S93/
