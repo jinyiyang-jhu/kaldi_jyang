@@ -92,6 +92,9 @@ fi
 if [ $stage -le 14 ]; then
   echo "$0: creating neural net configs using the xconfig parser";
 
+
+  ivector_dim=$(feat-to-dim scp:$train_ivector_dir/ivector_online.scp -)
+  feat_dim=$(feat-to-dim scp:$train_data_dir/feats.scp -)
   num_targets=$(tree-info $tree_dir/tree | grep num-pdfs | awk '{print $2}')
   learning_rate_factor=$(echo "print (0.5/$xent_regularize)" | python)
   affine_opts="l2-regularize=0.008 dropout-proportion=0.0 dropout-per-dim=true dropout-per-dim-continuous=true"
@@ -103,8 +106,8 @@ if [ $stage -le 14 ]; then
   mkdir -p $dir/configs
 
   cat <<EOF > $dir/configs/network.xconfig
-  input dim=100 name=ivector
-  input dim=43 name=input
+  input dim=$ivector_dim name=ivector
+  input dim=$feat_dim name=input
 
   # please note that it is important to have input layer with the name=input
   # as the layer immediately preceding the fixed-affine-layer to enable

@@ -3,7 +3,7 @@
 # Copyright 2019 (author: Jinyi Yang)
 # Apache 2.0
 
-
+# This scripts remove bad utterances from the tdt corpus.
 . path.sh
 . ./utils/parse_options.sh
 if [ $# != 2 ]; then

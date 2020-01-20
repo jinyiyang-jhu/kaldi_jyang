@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright 2019 Johns Hopkins University (author: Jinyi Yang)
+# Apache 2.0
+
 . ./path.sh || exit 1;
 
 echo $0 "$@"

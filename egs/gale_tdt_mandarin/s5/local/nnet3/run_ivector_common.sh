@@ -23,9 +23,6 @@ ali_dir=exp/${gmm}_sp_ali
 . ./path.sh
 . utils/parse_options.sh
 
-
-
-
 for f in data/${train_set}/feats.scp $gmm/final.mdl; do
   if [ ! -f $f ]; then
     echo "$0: expected file $f to exist"
@@ -58,7 +55,6 @@ if [ $stage -le 2 ]; then
   steps/align_fmllr.sh --nj $nj --cmd "$train_cmd" \
     data/${train_set}_sp $lang $gmm $ali_dir || exit 1
 fi
-
 
 if [ $stage -le 3 ]; then
   echo "$0: creating high-resolution MFCC features"

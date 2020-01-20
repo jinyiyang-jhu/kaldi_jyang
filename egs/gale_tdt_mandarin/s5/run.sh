@@ -269,8 +269,12 @@ if [ $stage -le 14 ]; then
     data/lang_large data/lang_large_test
 fi
 
-# From here, we train a tdnnf model
+# From here, we train a tdnnf model. You should modify the related directories
+# in this script, and in local/nnet3/run_ivector_common.sh
 local/chain/run_tdnn.sh
 
-# Train RNNLM
+# We use all GALE+TDT+GIGAWORD text to train RNNLM
 cat local/gale_tdt_lm_4gram/text data/local/giga_lm_4gram/text | gzip > data/local/lm_large_4gram/train_text.gz
+# Train RNNLM. You should modify the related directories in this script.
+local/rnnlm/run_tdnn_lstm_1a.sh
+

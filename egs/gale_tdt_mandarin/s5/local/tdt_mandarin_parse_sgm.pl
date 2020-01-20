@@ -138,7 +138,6 @@ foreach my $file (@files) {
     } elsif($line =~ /<END_TIME>/){
         @times = split /\s+/, $line;
         $end_time = str2time($times[2]) - $doc_start_time;
-        #$start_time = 0;
       ;
     } elsif ($line =~ /<DOCTYPE>/) {
       $doctype = check_doc_type $line;
@@ -158,7 +157,6 @@ foreach my $file (@files) {
       ;
     } elsif ($line !~ "<") {
       $line = trim $line;
-      #$line = encode("utf-8", decode("ISO-8859-1", $line));
       $line = decode("gbk", $line);
       $line =~ s:〈turn〉:THISISSPKTURN:g;
       $line =~ s:<turn>:THISISSPKTURN:g;

@@ -1,13 +1,11 @@
 #!/usr/bin/env perl
 use warnings; #sed replacement for -w perl parameter
-# Copyright Chao Weng 
 
-# normalizations for hkust trascript
-# see the docs/trans-guidelines.pdf for details
+# This script removes special symbols from the transcriptions.
 
 while (<STDIN>) {
   @A = split(" ", $_);
-  for ($n = 0; $n < @A; $n++) { 
+  for ($n = 0; $n < @A; $n++) {
     $a = $A[$n];
     $tmp = $a;
     $tmp =~ s:Ａ:A:g;
