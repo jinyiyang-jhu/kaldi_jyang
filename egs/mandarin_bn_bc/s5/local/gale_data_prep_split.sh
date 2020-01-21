@@ -31,8 +31,8 @@ utils/filter_scp.pl --exclude -f 2 \
 mv $galeData/all $galeData/all.orig
 mv $galeData/all.nodup $galeData/all
 
-diff <(awk '{print $1}' GALE.backup/all | sort | uniq) \
-	<(awk '{print $1}' GALE.backup/wav.scp | sort | uniq) |\
+diff <(awk '{print $1}' $galeData/all | sort | uniq) \
+	<(awk '{print $1}' $galeData/wav.scp | sort | uniq) |\
 	 grep '>\|<' | cut -d " " -f2- > $galeData/bad_utts
 grep    -f <(cat local/gale_dev/test.LDC*) $galeData/all | grep -v -F -f $galeData/bad_utts  > $galeData/all.dev
 
