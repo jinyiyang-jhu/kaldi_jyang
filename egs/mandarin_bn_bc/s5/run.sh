@@ -5,7 +5,7 @@
 
 train_nj=80
 decode_nj=60
-stage=3
+stage=-1
 
 [ -f ./path.sh ] && . ./path.sh
 [ -f ./cmd.sh ] && . ./cmd.sh
