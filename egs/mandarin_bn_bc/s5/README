@@ -25,11 +25,10 @@ Text:
   LDC2016T12
   LDC2017T18
 
-	TDT 2/3/4
+  TDT 2/3/4
   LDC2001T57
   LDC2001T58
   LDC2005T16
-
-	Besides, it uses Gigga word, simplified Mandarin for LM training and expanding dictionary:
+  Besides, it uses Gigga word, simplified Mandarin for LM training and expanding dictionary:
 	Gigga word (xin:simplified, cna:traditional. Use only xin)
   LDC2003T09
