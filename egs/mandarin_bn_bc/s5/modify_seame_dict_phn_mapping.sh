@@ -47,6 +47,9 @@ cat $seame_lex_dir/lexicon-ch.txt | tr [:lower:] [:upper:] | grep -v 'M2' | grep
 cat $seame_lex_new_dir/lexicon-en.txt $seame_lex_new_dir/lexicon-ch.txt | awk 'NF>1' | grep -v "<" |\
   sort -u > $seame_lex_new_dir/lexicon1.txt || exit 1;
 
+echo '一忽儿 Y IY1 HH UW1 AA5 R5' >> $seame_lex_new_dir/lexicon1.txt
+echo '一开 Y IY1 K AY5' >> $seame_lex_new_dir/lexicon1.txt
+
 cat $seame_lex_new_dir/lexicon1.txt | awk '{ for(n=2;n<=NF;n++){ phones[$n] = 1; }} END{for (p in phones) print p;}'| \
   sort -u |\
   perl -e '
@@ -64,7 +67,7 @@ cat $seame_lex_new_dir/lexicon1.txt | awk '{ for(n=2;n<=NF;n++){ phones[$n] = 1;
   }
   ' | sort -k1 > $seame_lex_new_dir/nonsilence_phones.txt  || exit 1;
 
-( echo SIL; echo SPN; echo NSN; ) > $seame_lex_new_dir/silence_phones.txt
+( echo SIL; echo SPN; echo NSN; echo LAU) > $seame_lex_new_dir/silence_phones.txt
 
 echo SIL > $seame_lex_new_dir/optional_silence.txt
 
@@ -77,7 +80,7 @@ cat $seame_lex_new_dir/nonsilence_phones.txt | perl -e 'while(<>){ foreach $p (s
  >> $seame_lex_new_dir/extra_questions.txt || exit 1;
 
 # Add to the lexicon the silences, noises etc.
-(echo '<V-NOISE> SPN'; echo '<NOISE> NSN'; echo '<UNK> SPN' ) | \
+(echo '<V-NOISE> SPN'; echo '<NOISE> NSN'; echo '<UNK> SPN' ; echo '<LAUGH> LAU';) | \
  cat - $seame_lex_new_dir/lexicon1.txt  > $seame_lex_new_dir/lexicon.txt || exit 1;
 
 echo "$0: Mandarin dict preparation succeeded"
