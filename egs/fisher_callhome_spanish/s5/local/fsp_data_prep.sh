@@ -164,7 +164,7 @@ fi
 if [ $stage -le 4 ]; then
   # Build the speaker to gender map, the temporary file with the speaker in gender information is already created by fsp_make_trans.pl.
   cd $cdir
-  $local/fsp_make_spk2gender.sh > $dir/train_all/spk2gender
+  $local/fsp_make_spk2gender.py > $dir/train_all/spk2gender
 fi
 
 fix_data_dir.sh $dir/train_all || exit 1
