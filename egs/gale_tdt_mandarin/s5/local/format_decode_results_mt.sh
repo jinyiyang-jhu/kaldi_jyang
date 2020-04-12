@@ -2,13 +2,16 @@
 
 # This script reformat the segment id of decoding result.
 
-stage=1
-decode_dir=exp/chain_cleanup/tdnn_1d_sp/decode_eval_large_test_rnnlm_1a_rescore
+stage=-1
+decode_dir=exp/chain_cleanup/tdnn_1d_sp/decode_eval_large_test
 
 if [ $stage -le 0 ]; then
+  echo "Filtering ASR outpu"
   for dset in tune eval; do
-    datadir=gale_${dset}_mt
+    datadir=gale_${dset}_mt_no_rnn
     for x in bc bn;do
+      mkdir -p $datadir/$x
+      #cp gale_${dset}_mt/$x/segments $datadir/$x/segments
       awk '{print $1}' $datadir/$x/segments > $datadir/$x/segments.id
       filter=$datadir/$x/segments.id
       score_dir=$decode_dir/scoring_mahsa_${dset}_${x}
@@ -20,11 +23,14 @@ if [ $stage -le 0 ]; then
       wer_result=$decode_dir/scoring_kaldi/penalty_${wip}/$lmwt.txt
       cat $cer_result | grep -f $filter > $datadir/$x/asr.chars.part.txt
       cat $wer_result | grep -f $filter > $datadir/$x/asr.words.part.txt
+      cp $score_dir/test_filt.chars.txt  $datadir/$x/text.filt.chars.txt
     done
   done
-fi
 echo "Filter ASR output done"
+fi
 
+
+exit 0
 if [ $stage -le 1 ]; then
   for dset in tune eval; do
     datadir=gale_${dset}_mt

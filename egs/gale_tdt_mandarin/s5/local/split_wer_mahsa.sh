@@ -9,7 +9,7 @@
 
 set -o pipefail -e
 stage=-1
-decode_dir=exp/chain_cleanup/tdnn_1d_sp/decode_eval_large_test_rnnlm_1a_rescore
+decode_dir=exp/chain_cleanup/tdnn_1d_sp/decode_eval_large_test
 
 min_lmwt=7
 max_lmwt=20
