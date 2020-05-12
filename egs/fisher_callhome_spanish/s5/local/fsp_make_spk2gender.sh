@@ -6,6 +6,7 @@
 
 import os
 import sys
+from __future__ import print_function
 
 tmpFileLocation = 'data/local/tmp/spk2gendertmp'
 
