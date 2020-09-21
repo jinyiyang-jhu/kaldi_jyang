@@ -4,33 +4,34 @@
 # Apache 2.0
 
 # GALE Arabic phase 2 Conversation Speech
-dir1=/export/corpora/LDC/LDC2013S02/         
-dir2=/export/corpora/LDC/LDC2013S07/         
-text1=/export/corpora/LDC/LDC2013T04/
-text2=/export/corpora/LDC/LDC2013T17/
+dir1=/export/corpora5/LDC/LDC2013S02/         
+dir2=/export/corpora5/LDC/LDC2013S07/         
+text1=/export/corpora5/LDC/LDC2013T04/
+text2=/export/corpora5/LDC/LDC2013T17/
 # GALE Arabic phase 2 News Speech
-dir3=/export/corpora/LDC/LDC2014S07/         
-dir4=/export/corpora/LDC/LDC2015S01/         
-text3=/export/corpora/LDC/LDC2014T17/        
-text4=/export/corpora/LDC/LDC2015T01/        
+dir3=/export/corpora5/LDC/LDC2014S07/         
+dir4=/export/corpora5/LDC/LDC2015S01/         
+text3=/export/corpora5/LDC/LDC2014T17/        
+text4=/export/corpora5/LDC/LDC2015T01/        
 # GALE Arabic phase 3 Conversation Speech
-dir5=/export/corpora/LDC/LDC2015S11/         
-dir6=/export/corpora/LDC/LDC2016S01/         
-text5=/export/corpora/LDC/LDC2015T16/        
-text6=/export/corpora/LDC/LDC2016T06/        
+dir5=/export/corpora5/LDC/LDC2015S11/         
+dir6=/export/corpora5/LDC/LDC2016S01/         
+text5=/export/corpora5/LDC/LDC2015T16/        
+text6=/export/corpora5/LDC/LDC2016T06/        
 # GALE Arabic phase 3 News Speech
-dir7=/export/corpora/LDC/LDC2016S07/          
-dir8=/export/corpora/LDC/LDC2017S02/          
-text7=/export/corpora/LDC/LDC2016T17/         
-text8=/export/corpora/LDC/LDC2017T04/         
+dir7=/export/corpora5/LDC/LDC2016S07/          
+dir8=/export/corpora3/LDC/LDC2017S02/          
+text7=/export/corpora5/LDC/LDC2016T17/         
+text8=/export/corpora3/LDC/LDC2017T04/         
 # GALE Arabic phase 4 Conversation Speech
-dir9=/export/corpora/LDC/LDC2017S15/          
-text9=/export/corpora/LDC/LDC2017T12/         
+dir9=/export/corpora3/LDC/LDC2017S15/          
+text9=/export/corpora3/LDC/LDC2017T12/         
 # GALE Arabic phase 4 News Speech
-dir10=/export/corpora/LDC/LDC2018S05/         
-text10=/export/corpora/LDC/LDC2018T14/        
+dir10=/export/corpora3/LDC/LDC2018S05/         
+text10=/export/corpora3/LDC/LDC2018T14/        
 
 mgb2_dir=""
+process_xml=""
 mer=80
 
 . ./utils/parse_options.sh
@@ -108,13 +109,6 @@ cd $top_pwd
 # prepare MGB2 data
 if [ ! -z $mgb2_dir ]; then
   echo "preparing MGB2 data"
-  # check xml
-  if [ -z $(which xml) ]; then
-    echo "$0: Could not find tool xml"
-    echo "$0: To use MGB2 you must have xml installed"
-    echo "$0: Download and install it from xmlstar.sourceforge.net"
-    exit 1
-  fi
 
   xmldir=$mgb2_dir/train/xml/bw
   output_dir=$gale_data/mgb2
@@ -126,12 +120,35 @@ if [ ! -z $mgb2_dir ]; then
     mv $output_dir/mgb2 ${output_dir}/.backup
   fi
 
-  ls $mgb2_dir/train/wav/ | while read name; do
-    basename=`basename -s .wav $name`
-    [ ! -e $xmldir/$basename.xml ] && echo "Missing $xmldir/$basename.xml" && exit 1
-    xml sel -t -m '//segments[@annotation_id="transcript_align"]' -m "segment" -n -v  "concat(@who,' ',@starttime,' ',@endtime,' ',@WMER,' ')" -m "element" -v "concat(text(),' ')" $xmldir/$basename.xml | local/add_to_datadir.py $basename $output_dir $mer
-     echo $basename $db_dir/train/wav/$basename.wav >> $output_dir/wav.scp
-  done
+  if [ $process_xml == 'python' ]; then
+    echo "using python to process xml file"
+    # check if bs4 and lxml are installed in python
+    local/check_tools.sh
+    ls $mgb2_dir/train/wav/ | while read name; do
+      basename=`basename -s .wav $name`
+      [ ! -e $xmldir/$basename.xml ] && echo "Missing $xmldir/$basename.xml" && exit 1
+      local/process_xml.py $xmldir/$basename.xml - | local/add_to_datadir.py $basename $train_dir $mer
+      echo $basename $db_dir/train/wav/$basename.wav >> $output_dir/wav.scp
+    done
+  elif [ $process_xml == 'xml' ]; then
+    # check if xml binary exsits
+    if command -v xml >/dev/null 2>/dev/null; then
+      echo "using xml"
+      ls $mgb2_dir/train/wav/ | while read name; do
+        basename=`basename -s .wav $name`
+        [ ! -e $xmldir/$basename.xml ] && echo "Missing $xmldir/$basename.xml" && exit 1
+        xml sel -t -m '//segments[@annotation_id="transcript_align"]' -m "segment" -n -v  "concat(@who,' ',@starttime,' ',@endtime,' ',@WMER,' ')" -m "element" -v "concat(text(),' ')" $xmldir/$basename.xml | local/add_to_datadir.py $basename $output_dir $mer
+        echo $basename $db_dir/train/wav/$basename.wav >> $output_dir/wav.scp
+      done
+    else
+      echo "xml not found, you may use python by '--process-xml python'"
+      exit 1;
+    fi
+  else
+    # invalid option
+    echo "$0: invalid option for --process-xml, choose from 'xml' or 'python'"
+    exit 1;
+  fi
 
   # add mgb2 data to training data (GALE/all and wav.scp)
   mv $gale_data/all $gale_data/all.gale 
