@@ -30,10 +30,6 @@ if [ -f path.sh ]; then . ./path.sh; fi
 set -e
 
 if [ $stage -le 0 ]; then
-  #local/fsp_data_prep.sh $sfisher_speech $sfisher_transcripts
-
-  # local/callhome_data_prep.sh $callhome_speech $callhome_transcripts
-
   # Prepare the data from ESPNET provided dataset
   local/prepare_data_from_espnet/prepare_data.sh
   # The lexicon is created using the LDC spanish lexicon, the words from the
@@ -100,7 +96,7 @@ if [ $stage -le 3 ]; then
 
   (utils/mkgraph.sh data/lang_test exp/tri1 exp/tri1/graph
   steps/decode.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-    exp/tri1/graph data/dev exp/tri1/decode_dev)&
+    exp/tri1/graph data/fisher_dev exp/tri1/decode_fisher_dev)&
 
   steps/align_si.sh --nj 30 --cmd "$train_cmd" \
     data/train_30k data/lang exp/tri1 exp/tri1_ali || exit 1;
@@ -111,7 +107,7 @@ if [ $stage -le 3 ]; then
   (
     utils/mkgraph.sh data/lang_test exp/tri2 exp/tri2/graph || exit 1;
     steps/decode.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-      exp/tri2/graph data/dev exp/tri2/decode_dev || exit 1;
+      exp/tri2/graph data/fisher_dev exp/tri2/decode_fisher_dev || exit 1;
    )&
 fi
 
@@ -126,7 +122,7 @@ if [ $stage -le 4 ]; then
   (
     utils/mkgraph.sh data/lang_test exp/tri3a exp/tri3a/graph || exit 1;
     steps/decode.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-     exp/tri3a/graph data/dev exp/tri3a/decode_dev || exit 1;
+     exp/tri3a/graph data/fisher_dev exp/tri3a/decode_fisher_dev || exit 1;
   )&
 fi
 
@@ -142,7 +138,7 @@ if [ $stage -le 5 ]; then
   (
     utils/mkgraph.sh data/lang_test exp/tri4a exp/tri4a/graph
     steps/decode_fmllr.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-      exp/tri4a/graph data/dev exp/tri4a/decode_dev
+      exp/tri4a/graph data/fisher_dev exp/tri4a/decode_fisher_dev
 )&
 
 
@@ -156,17 +152,15 @@ if [ $stage -le 5 ]; then
   (
     utils/mkgraph.sh data/lang_test exp/tri5a exp/tri5a/graph
     steps/decode_fmllr.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-      exp/tri5a/graph data/dev exp/tri5a/decode_dev
+      exp/tri5a/graph data/fisher_dev exp/tri5a/decode_fisher_dev
     steps/decode_fmllr.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
       exp/tri5a/graph data/test exp/tri5a/decode_test
 
   # Decode CALLHOME
     steps/decode_fmllr.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-      exp/tri5a/graph data/callhome_test exp/tri5a/decode_callhome_test
+      exp/tri5a/graph data/callhome_devtest exp/tri5a/decode_callhome_devtest
     steps/decode_fmllr.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-      exp/tri5a/graph data/callhome_dev exp/tri5a/decode_callhome_dev
-    steps/decode_fmllr.sh --nj 25 --cmd "$decode_cmd" --config conf/decode.config \
-      exp/tri5a/graph data/callhome_train exp/tri5a/decode_callhome_train
+      exp/tri5a/graph data/callhome_evltest exp/tri5a/decode_callhome_evltest
     ) &
 
 
@@ -189,8 +183,8 @@ utils/mkgraph.sh data/lang_test exp/sgmm5 exp/sgmm5/graph
 
 (
   steps/decode_sgmm2.sh --nj 13 --cmd "$decode_cmd" --num-threads 5 \
-    --config conf/decode.config  --scoring-opts "--min-lmwt 8 --max-lmwt 16" --transform-dir exp/tri5a/decode_dev \
-   exp/sgmm5/graph data/dev exp/sgmm5/decode_dev
+    --config conf/decode.config  --scoring-opts "--min-lmwt 8 --max-lmwt 16" --transform-dir exp/tri5a/decode_fisher_dev \
+   exp/sgmm5/graph data/fisher_dev exp/sgmm5/decode_fisher_dev
 )&
 
 steps/align_sgmm2.sh \
@@ -212,21 +206,23 @@ steps/train_mmi_sgmm2.sh \
 utils/mkgraph.sh data/lang_test exp/tri5a exp/tri5a/graph
 steps/decode_fmllr_extra.sh --nj 13 --cmd "$decode_cmd" --num-threads 4 --parallel-opts " -pe smp 4" \
   --config conf/decode.config  --scoring-opts "--min-lmwt 8 --max-lmwt 12"\
- exp/tri5a/graph data/dev exp/tri5a/decode_dev
+ exp/tri5a/graph data/fisher_dev exp/tri5a/decode_fisher_dev
 utils/mkgraph.sh data/lang_test exp/sgmm5 exp/sgmm5/graph
 steps/decode_sgmm2.sh --nj 13 --cmd "$decode_cmd" --num-threads 5 \
-  --config conf/decode.config  --scoring-opts "--min-lmwt 8 --max-lmwt 16" --transform-dir exp/tri5a/decode_dev \
- exp/sgmm5/graph data/dev exp/sgmm5/decode_dev
+  --config conf/decode.config  --scoring-opts "--min-lmwt 8 --max-lmwt 16" --transform-dir exp/tri5a/decode_fisher_dev \
+ exp/sgmm5/graph data/fisher_dev exp/sgmm5/decode_fisher_dev
 for iter in 1 2 3 4; do
   decode=exp/sgmm5_mmi_b0.1/decode_dev_it$iter
   mkdir -p $decode
   steps/decode_sgmm2_rescore.sh  \
-    --cmd "$decode_cmd" --iter $iter --transform-dir exp/tri5a/decode_dev \
-    data/lang_test data/dev/  exp/sgmm5/decode_dev $decode
+    --cmd "$decode_cmd" --iter $iter --transform-dir exp/tri5a/decode_fisher_dev \
+    data/lang_test data/fisher_dev/  exp/sgmm5/decode_fisher_dev $decode
 done
 ) &
 
 fi
 
 local/chain/run_tdnn_1g.sh --stage $stage --train-stage $train_stage || exit 1;
-exit 0;
+
+local/decode_train.sh --nj 80
+
