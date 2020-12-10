@@ -17,12 +17,13 @@ set -e -o pipefail
 stage=0
 nj=30
 train_set=train
-test_sets="train fisher_dev fisher_dev2 fisher_test callhome_devtest callhome_evltest"
+test_sets="fisher_dev fisher_dev2 fisher_test callhome_devtest callhome_evltest"
 #test_sets="fish dev"
 gmm=tri5a        # this is the source gmm-dir that we'll use for alignments; it
                  # should have alignments for the specified training data.
 num_threads_ubm=32
 nnet3_affix=       # affix for exp dirs, e.g. it was _cleaned in tedlium.
+lang_dir=data/lang_test
 
 # Options which are not passed through to run_ivector_common.sh
 affix=1g   #affix for TDNN+LSTM directory e.g. "1a" or "1b", in case we change the configuration.
@@ -278,8 +279,13 @@ if [ $stage -le 23 ]; then
           --online-ivector-dir exp/nnet3/ivectors_${data}_hires \
           $tree_dir/graph_${lmtype} data/${data}_hires ${dir}/decode_${lmtype}_${data} || exit 1;
       done
-      bash local/rnnlm/lmrescore_nbest.sh 1.0 data/lang_test $rnnlmdir data/${data}_hires/ \
-	      ${dir}/decode_${lmtype}_${data} $dir/decode_rnnLM_${lmtype}_${data} || exit 1;
+      bash rnnlm/lmrescore_pruned.sh --cmd "$decode_cmd --mem 8G" \
+        --weight 0.45 --max-ngram-order 4 \
+        $lang_dir $rnnlmdir \
+        data/${data}_hires ${dir}/decode_${lmtype}_${data} \
+        $dir/decode_rnnLM_${lmtype}_${data} || exit 1;
+      bash rnnlm/lmrescore_nbest.sh 1.0 data/lang_test $rnnlmdir data/${data}_hires/ \
+	      ${dir}/decode_${lmtype}_${data} $dir/decode_rnnLM_nbest_${lmtype}_${data} || exit 1;
     ) || touch $dir/.error &
   done
   wait

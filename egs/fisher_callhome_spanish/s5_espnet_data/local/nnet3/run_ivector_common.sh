@@ -11,7 +11,7 @@ set -e -o pipefail
 stage=7
 nj=30
 train_set=train   # you might set this to e.g. train.
-test_sets="train fisher_dev fisher_dev2 fisher_test callhome_devtest callhome_evltest"
+test_sets="fisher_dev fisher_dev2 fisher_test callhome_devtest callhome_evltest"
 #test_sets="test dev"
 gmm=tri5a                # This specifies a GMM-dir from the features of the type you're training the system on;
                          # it should contain alignments for 'train_set'.
