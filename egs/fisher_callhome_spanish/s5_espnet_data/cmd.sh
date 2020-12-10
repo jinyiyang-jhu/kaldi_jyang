@@ -10,7 +10,11 @@
 # conf/queue.conf in http://kaldi-asr.org/doc/queue.html for more information,
 # or search for the string 'default_config' in utils/queue.pl or utils/slurm.pl.
 
-export train_cmd="queue.pl --mem 2G"
-export decode_cmd="queue.pl --mem 2G"
-export mkgraph_cmd="queue.pl --mem 4G"
-export cuda_cmd="queue.pl --gpu 1"
+#export train_cmd="queue.pl --mem 2G"
+export train_cmd="queue.pl --mem 4G -l 'hostname=b1[1235678]*|c0[123456789]*|c1[0123456789]*|c2[0123567]'"
+#export decode_cmd="queue.pl --mem 2G"
+export decode_cmd="queue.pl --mem 4G -l 'hostname=b1[1235678]*|c0[123456789]*|c1[0123456789]*|c2[0123567]'"
+#export mkgraph_cmd="queue.pl --mem 4G"
+export mkgraph_cmd="queue.pl --mem 4G -l 'hostname=b1[1235678]*|c0[123456789]*|c1[0123456789]*|c2[0123567]'"
+#export cuda_cmd="queue.pl --gpu 1"
+export cuda_cmd="queue-freegpu.pl --mem 8G --gpu 1 --config conf/gpu.conf"
