@@ -58,8 +58,8 @@ if [ $stage -le 0 ]; then
 fi
 
 if [ $stage -le 1 ]; then
-  echo "Making MFCC for train"
-  steps/make_mfcc.sh --nj 80 --cmd "$train_cmd" data/train exp/make_mfcc/train $mfccdir || exit 1;
+    echo "Making MFCC for train"
+    steps/make_mfcc.sh --nj 80 --cmd "$train_cmd" data/train exp/make_mfcc/train $mfccdir || exit 1;
     
     for dset in "${eval_sets[@]}"; do
       echo "Making MFCC for $dset"
