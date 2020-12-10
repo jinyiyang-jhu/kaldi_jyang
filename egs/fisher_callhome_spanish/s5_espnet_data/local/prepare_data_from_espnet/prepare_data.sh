@@ -29,7 +29,7 @@ if [ $stage -le 0 ]; then
     cut -d "-" -f2- $espnet_train_dir/wav.scp | \
          awk -v sph2pipe=$sph2pipe 'NR==FNR{split($0, f1, "/");
             split(f1[9], tmp, "."); all[tmp[1]]=$0; next};
-            {split($1, f2, "-"); if (f2[1] in all){print $1" "sph2pipe" -f wav -p -c "$7" "all[f2[1]] " | sox -R -t wav - -t wav - rate 16000 dither |"}}' $fisher_speech - | \
+            {split($1, f2, "-"); if (f2[1] in all){print $1" "sph2pipe" -f wav -p -c "$7" "all[f2[1]] " |"}}' $fisher_speech - | \
             sort -u > $output_dir/train/wav.scp
 
     # Select text
@@ -54,7 +54,7 @@ if [ $stage -le 2 ]; then
         # prepare wav.scp
         awk -v sph2pipe=$sph2pipe 'NR==FNR{split($0, f1, "/");
             split(f1[9], tmp, "."); all[tmp[1]]=$0; next};
-            {split($1, f2, "-"); if (f2[1] in all){print $1" "sph2pipe" -f wav -p -c "$7" "all[f2[1]] " | sox -R -t wav - -t wav - rate 16000 dither |"}}' $fisher_speech $espnet_dset_dir/wav.scp \
+            {split($1, f2, "-"); if (f2[1] in all){print $1" "sph2pipe" -f wav -p -c "$7" "all[f2[1]] " |"}}' $fisher_speech $espnet_dset_dir/wav.scp \
             > $output_dir/$dset/wav.scp
         # prepare text
         sed "s/ &apos; /'/g" $espnet_dset_dir/text.lc.rm > $output_dir/$dset/text || exit 1;
