@@ -52,23 +52,20 @@ cd $top_pwd
 cut -d " " -f1 $txtdir/text.tmp > $txtdir/uttid
 cut -d " " -f2- $txtdir/text.tmp > $txtdir/trans
 
-pyver=`python --version 2>&1 | sed -e 's:.*\([2-3]\.[0-9]\+\).*:\1:g'`
+pyver="2.7"
 export PYTHONPATH=$PYTHONPATH:`pwd`/tools/mmseg-1.3.0/lib/python${pyver}/site-packages
-if [ ! -d tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
-  echo "--- Downloading mmseg-1.3.0 ..."
-  echo "NOTE: it assumes that you have Python, Setuptools installed on your system!"
-  wget -P tools http://pypi.python.org/packages/source/m/mmseg/mmseg-1.3.0.tar.gz
-  tar xf tools/mmseg-1.3.0.tar.gz -C tools
-  cd tools/mmseg-1.3.0
-  mkdir -p lib/python${pyver}/site-packages
-  CC=gcc CXX=g++ python setup.py build
-  python setup.py install --prefix=.
-  cd ../..
-  if [ ! -d tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
+if [ ! -d $KALDI_ROOT/tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
+  echo "--- Installing mmseg 1.3 ..."
+  echo "NOTE: it assumes that you have Python2 environment, Setuptools installed on your system!"
+  cd $KALDI_ROOT/tools/extras
+  bash install_mmseg.sh
+  if [ ! -d $KALDI_ROOT/tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
     echo "mmseg is not found - installation failed?"
     exit 1
   fi
+  cd $top_pwd
 fi
+
 # Create text, use mmseg for splitting Mandarin characters into words.
 cat $txtdir/trans |\
    sed -e 's/,//g' | \

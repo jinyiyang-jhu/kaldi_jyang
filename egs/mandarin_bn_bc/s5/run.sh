@@ -38,7 +38,7 @@ TDT_AUDIO=(
 TDT_TEXT=(
   /export/corpora/LDC/LDC2001T57/
   /export/corpora/LDC/LDC2001T58/
-  /export/corpora5/LDC/LDC2005T16/
+  /export/corpora/LDC/LDC2005T16/
 )
 
 GIGA_TEXT=/export/corpora/LDC/LDC2003T09/gigaword_man/xin/
