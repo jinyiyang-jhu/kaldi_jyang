@@ -100,7 +100,7 @@ cat $txtdir/contentall.tmp |\
   sed -e 's/<noise>\(.\+\)<\/noise>/\1/g' |\
   sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
   perl local/mandarin_text_normalize.pl | \
-  python local/mandarin_segment.py > $txtdir/text || exit 1;
+  python2 local/mandarin_segment.py > $txtdir/text || exit 1;
 
 paste $txtdir/allid.tmp $txtdir/text | sed 's: $::' | awk '{if (NF>5) {print
 $0}}'  > $txtdir/all_1.tmp
