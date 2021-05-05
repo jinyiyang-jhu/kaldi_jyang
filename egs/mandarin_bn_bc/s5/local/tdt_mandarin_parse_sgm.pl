@@ -21,7 +21,8 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Time::Piece;
+use lib '/home/hltcoe/jyang1/perl';
+#use Time::Piece;
 
 require HTML::Parser or die "This script needs HTML::Parser from CPAN";
 HTML::Parser->import();
@@ -51,7 +52,9 @@ sub str2time {
   my ($str) = @_;
   $str =~ s/(\.[0-9]+)?\z//;
   my $fraction = $1 || 0;
-  return Time::Piece->strptime($str, '%H:%M:%S')->epoch + $fraction;
+  my @time = split(':', $str);
+  return $time[0]*3600 + $time[1]*60 + $time[2] + $fraction;
+  #return Time::Piece->strptime($str, '%H:%M:%S')->epoch + $fraction;
 }
 
 sub get_time_tag{

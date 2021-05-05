@@ -71,7 +71,7 @@ cat $txtdir/trans |\
    sed -e 's/,//g' | \
    sed -e 's/((\([^)]\{0,\}\)))/\1/g' |\
    perl local/mandarin_text_normalize.pl |\
-   python local/mandarin_segment.py |\
+   python2 local/mandarin_segment.py |\
    sed -e 's/THISISSPKTURN/<TURN>/g' |\
    paste $txtdir/uttid - |\
    awk '{if (NF>2 || (NF==2 && $2 != "<TURN>")) print $0}' > $txtdir/text_with_spk_turn
