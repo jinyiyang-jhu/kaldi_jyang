@@ -18,4 +18,9 @@ if [ $(hostname -d) == "clsp.jhu.edu" ]; then
   export train_cmd="retry.pl queue.pl -l hostname=c[01][12345]*"
   export decode_cmd="retry.pl queue.pl -l hostname=c[01][12345]*"
   export mkgraph_cmd="retry.pl queue.pl --mem 8G"
+else
+  queue_conf=conf/queue.conf
+  export train_cmd="queue.pl --mem 4G"
+  export decode_cmd="queue.pl --mem 2G"
+  export cuda_cmd="queue.pl --config $queue_conf --gpu 1 --mem 8G --tmp 40G"
 fi
