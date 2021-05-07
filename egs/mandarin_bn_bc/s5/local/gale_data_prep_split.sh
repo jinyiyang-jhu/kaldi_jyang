@@ -36,27 +36,34 @@ fi
 #diff <(awk '{print $1}' $galeData/all | sort | uniq) \
 #	<(awk '{print $1}' $galeData/wav.scp | sort | uniq) |\
 #	 grep '>\|<' | cut -d " " -f2- > $galeData/bad_utts
+grep -f <(cat local/gale_dev/test.LDC*) $galeData/all | grep -v -F -f local/gale_bad_utts  > $galeData/all.dev
 
 grep -v -f <(cat local/gale_dev/test.LDC*) $galeData/all |\
   grep -v -f <(cat local/gale_eval/test.LDC*) |\
   grep -v -F -f local/gale_bad_utts  > $galeData/all.train
 
-cat $galeData/all.train | awk '{print$2}' > $galeData/train_utt_list
+cat $galeData/all.dev | awk '{print $2}' > $galeData/dev_utt_list
+cat $galeData/all.train | awk '{print $2}' > $galeData/train_utt_list
 
+mkdir -p $dir/dev
 mkdir -p $dir/train
+
+utils/filter_scp.pl -f 1 $galeData/dev_utt_list $galeData/utt2spk > $dir/dev/utt2spk
+utils/utt2spk_to_spk2utt.pl $dir/dev/utt2spk | sort -u > $dir/dev/spk2utt
 
 utils/filter_scp.pl -f 1 $galeData/train_utt_list $galeData/utt2spk > $dir/train/utt2spk
 utils/utt2spk_to_spk2utt.pl $dir/train/utt2spk | sort -u > $dir/train/spk2utt
 
-for x in train; do
+for x in dev train; do
  outdir=$dir/$x
  file=$galeData/all.$x
- mkdir -p $outdir
  awk '{print $2 " " $1 " " $3 " " $4}' $file  | sort -u > $outdir/segments
  awk '{printf $2 " "; for (i=5; i<=NF; i++) {printf $i " "} printf "\n"}' $file | sort -u > $outdir/text
 done
 
-cat $dir/train/segments | awk '{print$2}' | sort -u > $galeData/train.wav.list
+cat $dir/dev/segments | awk '{print $2}' | sort -u > $galeData/dev.wav.list
+utils/filter_scp.pl -f 1 $galeData/dev.wav.list $galeData/wav.scp > $dir/dev/wav.scp
+cat $dir/train/segments | awk '{print $2}' | sort -u > $galeData/train.wav.list
 utils/filter_scp.pl -f 1 $galeData/train.wav.list $galeData/wav.scp > $dir/train/wav.scp
 
 cat $galeData/wav.scp | awk -v seg=$dir/train/segments 'BEGIN{while((getline<seg) >0) {seen[$2]=1;}}
