@@ -68,7 +68,7 @@ if [ $stage -le 3 ]; then
     utils/create_split_dir.pl /export/b0{5,6,7,8}/$USER/kaldi-data/mfcc/mandarin-$(date +'%m_%d_%H_%M')/s5/$mfccdir/storage $mfccdir/storage
   fi
 
-  for datadir in ${train_set}_sp dev eval; do
+  for datadir in ${train_set}_sp dev; do
     utils/copy_data_dir.sh data/$datadir data/${datadir}_hires
   done
 
@@ -76,7 +76,7 @@ if [ $stage -le 3 ]; then
   # features; this helps make trained nnets more invariant to test data volume.
   utils/data/perturb_data_dir_volume.sh data/${train_set}_sp_hires
 
-  for datadir in ${train_set}_sp_hires dev_hires eval_hires; do
+  for datadir in ${train_set}_sp_hires dev_hires; do
     steps/make_mfcc_pitch_online.sh --nj $nj --mfcc-config conf/mfcc_hires.conf \
       --cmd "$train_cmd" data/${datadir} exp/make_hires_sp/$datadir $mfccdir || exit 1
     steps/compute_cmvn_stats.sh data/${datadir} exp/make_hires_sp/$datadir $mfccdir
@@ -153,7 +153,7 @@ if [ $stage -le 5 ]; then
   # Also extract iVectors for the test data, but in this case we don't need the speed
   # perturbation (sp).
 
-  for data in dev eval; do
+  for data in dev; do
     steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" --nj $nj \
       data/${data}_hires_nopitch exp/nnet3${nnet3_affix}/extractor \
       exp/nnet3${nnet3_affix}/ivectors_${data}_hires_nopitch

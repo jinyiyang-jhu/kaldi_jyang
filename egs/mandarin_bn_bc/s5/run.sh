@@ -12,33 +12,33 @@ stage=-1
 . parse_options.sh
 
 GALE_AUDIO=(
-  /export/corpora/LDC/LDC2013S08/
-  /export/corpora/LDC/LDC2013S04/
-  /export/corpora/LDC/LDC2014S09/
-  /export/corpora/LDC/LDC2015S06/
-  /export/corpora/LDC/LDC2015S13/
-  /export/corpora/LDC/LDC2016S03/
-  /export/corpora/LDC/LDC2017S25/
+  /export/common/data/corpora/LDC/LDC2013S08/
+  /export/common/data/corpora/LDC/LDC2013S04/
+  /export/common/data/corpora/LDC/LDC2014S09/
+  /export/common/data/corpora/LDC/LDC2015S06/
+  /export/common/data/corpora/LDC/LDC2015S13/
+  /export/common/data/corpora/LDC/LDC2016S03/
+  /export/common/data/corpora/LDC/LDC2017S25/
 )
 GALE_TEXT=(
-  /export/corpora/LDC/LDC2013T20/
-  /export/corpora/LDC/LDC2013T08/
-  /export/corpora/LDC/LDC2014T28/
-  /export/corpora/LDC/LDC2015T09/
-  /export/corpora/LDC/LDC2015T25/
-  /export/corpora/LDC/LDC2016T12/
-  /export/corpora/LDC/LDC2017T18/
+  /export/common/data/corpora/LDC/LDC2013T20/
+  /export/common/data/corpora/LDC/LDC2013T08/
+  /export/common/data/corpora/LDC/LDC2014T28/
+  /export/common/data/corpora/LDC/LDC2015T09/
+  /export/common/data/corpora/LDC/LDC2015T25/
+  /export/common/data/corpora/LDC/LDC2016T12/
+  /export/common/data/corpora/LDC/LDC2017T18/
 )
 
 TDT_AUDIO=(
-  /export/corpora/LDC/LDC2001S93/
-  /export/corpora/LDC/LDC2001S95/
-  /export/corpora/LDC/LDC2005S11/
+  /export/common/data/corpora/LDC/LDC2001S93/
+  /export/common/data/corpora/LDC/LDC2001S95/
+  /export/common/data/corpora/LDC/LDC2005S11/
 )
 TDT_TEXT=(
-  /export/corpora/LDC/LDC2001T57/
-  /export/corpora/LDC/LDC2001T58/
-  /export/corpora/LDC/LDC2005T16/
+  /export/common/data/corpora/LDC/LDC2001T57/
+  /export/common/data/corpora/LDC/LDC2001T58/
+  /export/common/data/corpora/LDC/LDC2005T16/
 )
 
 GIGA_TEXT=/export/corpora/LDC/LDC2003T09/gigaword_man/xin/
@@ -48,32 +48,32 @@ tdtData=TDT/
 gigaData=GIGA/
 
 set -e -o pipefail
-set -x
+#set -x
 
 ########################### Data preparation ###########################
 if [ $stage -le 0 ]; then
   echo "`date -u`: Prepare data for GALE"
   local/gale_data_prep_audio.sh "${GALE_AUDIO[@]}" $galeData
   local/gale_data_prep_txt.sh  "${GALE_TEXT[@]}" $galeData
-  local/gale_data_prep_split.sh $galeData data/local/gale
+  local/gale_data_prep_split.sh $galeData data/gale
 
   echo "`date -u`: Prepare data for TDT"
   local/tdt_mandarin_data_prep_audio.sh "${TDT_AUDIO[@]}" $tdtData
   local/tdt_mandarin_data_prep_txt.sh  "${TDT_TEXT[@]}" $tdtData
-  local/tdt_mandarin_data_prep_filter.sh $tdtData data/local/tdt_mandarin
+  local/tdt_mandarin_data_prep_filter.sh $tdtData data/tdt_mandarin
 
   ## Merge transcripts from GALE and TDT for lexicon and LM training
-  mkdir -p data/local/gale_tdt_train
-  cat data/local/gale/train/text data/local/tdt_mandarin/text > data/local/gale_tdt_train/text
+  mkdir -p data/gale_tdt_train
+  cat data/gale/train/text data/tdt_mandarin/text > data/gale_tdt_train/text
 fi
 
 ########################### Lexicon preparation ########################
 if [ $stage -le 1 ]; then
   echo "`date -u`: Prepare dictionary for GALE and TDT"
-  local/mandarin_prepare_dict.sh data/local/dict_gale_tdt data/local/gale_tdt_train
+  local/mandarin_prepare_dict.sh data/local/dict_gale_tdt data/gale_tdt_train
   local/check_oov_rate.sh data/local/dict_gale_tdt/lexicon.txt \
-    data/local/gale_tdt_train/text > data/local/gale_tdt_train/oov.rate
-  grep "rate" data/local/gale_tdt_train/oov.rate |\
+    data/gale_tdt_train/text > data/gale_tdt_train/oov.rate
+  grep "rate" data/gale_tdt_train/oov.rate |\
     awk '$10>0{print "Warning: OOV rate is "$10 ", make sure it is a small number"}'
   utils/prepare_lang.sh data/local/dict_gale_tdt "<UNK>" data/local/lang_gale_tdt data/lang_gale_tdt
 fi
@@ -82,8 +82,8 @@ fi
 if [ $stage -le 2 ]; then
   echo "`date -u`: Creating LM for GALE"
   local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
-    data/local/dict_gale_tdt data/local/gale/train data/local/gale/train/lm_4gram data/local/gale/dev
-  local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
+    data/local/dict_gale_tdt data/gale/train data/gale/train/lm_4gram data/gale/dev
+  local/mandarin_format_lms.sh data/gale/train/lm_4gram/srilm.o4g.kn.gz \
     data/lang_gale_tdt data/lang_gale_test
 fi
 
@@ -99,7 +99,7 @@ if [ $stage -le 3 ]; then
       $mfccdir/storage
   fi
   echo "`date -u`: Extracting GALE MFCC features"
-  for x in train dev eval; do
+  for x in train dev; do
     steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj $train_nj \
       $datadir/$x exp/make_mfcc/gale/$x $mfccdir
     utils/fix_data_dir.sh $datadir/$x # some files fail to get mfcc for many reasons

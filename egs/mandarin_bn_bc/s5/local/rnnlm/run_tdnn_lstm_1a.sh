@@ -95,7 +95,7 @@ if [ $stage -le 3 ]; then
   rnnlm/train_rnnlm.sh --num-jobs-final 8 \
                        --stage $train_stage \
                        --num-epochs $epochs \
-                       --cmd "$train_cmd" $dir
+                       --cmd "$cuda_cmd" $dir
 fi
 
 echo "RNNLM training finished"
@@ -107,7 +107,7 @@ if [ $stage -le 4 ] && $run_lat_rescore; then
     pruned=_pruned
   fi
   LM="large_test"
-  for decode_set in dev eval; do
+  for decode_set in dev; do
     decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
     # Lattice rescoring
     rnnlm/lmrescore$pruned.sh \
@@ -122,7 +122,7 @@ fi
 if [ $stage -le 5 ] && $run_nbest_rescore; then
   echo "$0: Perform nbest-rescoring on $ac_model_dir"
   LM="large_test"
-  for decode_set in dev eval; do
+  for decode_set in dev; do
     decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
     # Nbest rescoring
     rnnlm/lmrescore_nbest.sh \

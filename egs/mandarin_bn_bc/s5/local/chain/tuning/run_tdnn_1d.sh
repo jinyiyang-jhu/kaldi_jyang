@@ -150,7 +150,7 @@ if [ $stage -le 15 ]; then
   fi
 
   steps/nnet3/chain/train.py --stage $train_stage \
-    --cmd "$train_cmd" \
+    --cmd "$cuda_cmd" \
     --feat.online-ivector-dir $train_ivector_dir \
     --feat.cmvn-opts "--norm-means=false --norm-vars=false" \
     --chain.xent-regularize $xent_regularize \
@@ -195,7 +195,7 @@ fi
 
 echo "Decoding "
 iter_opts=
-for t in dev eval; do
+for t in dev; do
   ivector_dir=exp/nnet3${nnet3_affix}/ivectors_${t}_hires_nopitch
   steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
 	  --nj $decode_nj --cmd "$decode_cmd" $iter_opts \
