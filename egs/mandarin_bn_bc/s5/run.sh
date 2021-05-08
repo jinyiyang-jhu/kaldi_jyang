@@ -154,7 +154,7 @@ if [ $stage -le 7 ]; then
 	steps/train_sat.sh --cmd "$train_cmd" 2500 15000 \
                      $datadir/train_10k data/lang_gale_tdt $expdir/tri2b_ali_10k $expdir/tri3b
 	utils/mkgraph.sh data/lang_gale_test $expdir/tri3b $expdir/tri3b/graph_gale_test || exit 1;
-	steps/decodei_fmllr.sh  --nj $decode_nj --cmd "$decode_cmd" \
+	steps/decode_fmllr.sh  --nj $decode_nj --cmd "$decode_cmd" \
   	$expdir/tri3b/graph_gale_test $datadir/dev $expdir/tri3b/decode_gale_dev
 fi
 
@@ -183,7 +183,7 @@ if [ $stage -le 9 ]; then
                                   $expdir/tri4b/pron_bigram_counts_nowb.txt data/local/dict_gale_tdt_reestimated
   utils/prepare_lang.sh data/local/dict_gale_tdt_reestimated \
                         "<UNK>" data/local/lang_gale_tdt_reestimated data/lang_gale_tdt_reestimated
-  local/mandarin_format_lms.sh data/local/gale/train/lm_4gram/srilm.o4g.kn.gz \
+  local/mandarin_format_lms.sh data/gale/train/lm_4gram/srilm.o4g.kn.gz \
     data/lang_gale_tdt_reestimated data/lang_gale_tdt_reestimated_test
 fi
 
@@ -200,14 +200,14 @@ fi
 
 if [ $stage -le 11 ]; then
   echo "Clean up TDT data"
-  mkdir -p data/tdt || exit 1;
-  mfccdir=mfcc/tdt
-  cp -r data/local/tdt_mandarin/* data/tdt
+  #mkdir -p data/tdt || exit 1;
+  mfccdir=mfcc/tdt_mandarin
+  #cp -r data/tdt_mandarin/* data/tdt
   steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj $train_nj \
-      data/tdt exp/make_mfcc/tdt $mfccdir
-  utils/fix_data_dir.sh data/tdt # some files fail to get mfcc for many reasons
-  steps/compute_cmvn_stats.sh data/tdt exp/make_mfcc/tdt $mfccdir
-  local/tdt_cleanup.sh --nj $train_nj data/tdt data/lang_gale_tdt_reestimated \
+      data/tdt_mandarin exp/make_mfcc/tdt_mandarin $mfccdir
+  utils/fix_data_dir.sh data/tdt_mandarin # some files fail to get mfcc for many reasons
+  steps/compute_cmvn_stats.sh data/tdt_mandarin exp/make_mfcc/tdt_mandarin $mfccdir
+  local/tdt_cleanup.sh --nj $train_nj data/tdt_mandarin data/lang_gale_tdt_reestimated \
     $expdir/tri5b $expdir/tri5b_tdt_cleanup data/tdt_cleanup
   sed -i 's/<UNK>//g' data/tdt_cleanup/text
   steps/compute_cmvn_stats.sh data/tdt_cleanup exp/make_mfcc/tdt_cleanup ${mfccdir}_cleanup
@@ -254,15 +254,15 @@ if [ $stage -le 14 ]; then
   echo "Prepare LM with all data"
   # Train LM with GALE + TDT
   local/mandarin_prepare_lm.sh --no-uttid "false" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
-    data/local/dict_large data/local/gale_tdt_train data/local/gale_tdt_lm_4gram data/local/gale/dev
+    data/local/dict_large data/gale_tdt_train data/local/gale_tdt_lm_4gram data/gale/dev
 
   # Train LM with gigaword
   local/mandarin_prepare_lm.sh --no-uttid "true" --ngram-order 4 --oov-sym "<UNK>" --prune_thres "1e-9" \
-    data/local/dict_large GIGA/ data/local/giga_lm_4gram data/local/gale/dev
+    data/local/dict_large GIGA/ data/local/giga_lm_4gram data/gale/dev
 
   # LM interpolation
   local/mandarin_mix_lm.sh --ngram-order 4 --oov-sym "<UNK>" --prune-thres "1e-9" \
-    data/local/gale_tdt_lm_4gram data/local/giga_lm_4gram data/local/lm_large_4gram data/local/gale/dev
+    data/local/gale_tdt_lm_4gram data/local/giga_lm_4gram data/local/lm_large_4gram data/gale/dev
   local/mandarin_format_lms.sh data/local/lm_large_4gram/srilm.o4g.kn.gz \
     data/lang_large data/lang_large_test
 fi
