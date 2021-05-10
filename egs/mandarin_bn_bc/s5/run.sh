@@ -6,6 +6,7 @@
 train_nj=80
 decode_nj=60
 stage=-1
+tdnn_stage=-10
 
 [ -f ./path.sh ] && . ./path.sh
 [ -f ./cmd.sh ] && . ./cmd.sh
@@ -269,7 +270,7 @@ fi
 
 # From here, we train a tdnnf model. You should modify the related directories
 # in this script, and in local/nnet3/run_ivector_common.sh
-local/chain/run_tdnn.sh
+local/chain/run_tdnn.sh --stage $tdnn_stage
 
 # We use all GALE+TDT+GIGAWORD text to train RNNLM
 cat local/gale_tdt_lm_4gram/text data/local/giga_lm_4gram/text | gzip > data/local/lm_large_4gram/train_text.gz
