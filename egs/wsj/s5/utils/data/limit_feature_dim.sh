@@ -33,7 +33,7 @@ if [ ! -f $srcdir/feats.scp ]; then
 fi
 
 mkdir -p $destdir
-utils/copy_data_dir.sh $srcdir $destdir
+utils/copy_data_dir.sh --validate-opts $validate_opts $srcdir $destdir
 
 if [ -f $destdir/cmvn.scp ]; then
   rm $destdir/cmvn.scp
