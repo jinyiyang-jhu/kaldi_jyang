@@ -41,7 +41,7 @@ TDT_TEXT=(
   /export/common/data/corpora/LDC/LDC2005T16/
 )
 
-GIGA_TEXT=/export/corpora/LDC/LDC2003T09/gigaword_man/xin/
+GIGA_TEXT=/export/common/data/corpora/LDC/LDC2003T09/xin/
 
 galeData=GALE/
 tdtData=TDT/
@@ -235,7 +235,7 @@ fi
 
 if [ $stage -le 13 ]; then
   echo "Expand the lexicon with Gigaword"
-  local/gigaword_prepare.sh $GIGA_TEXT $gigaData
+  local/gigaword_prep_txt.sh $GIGA_TEXT $gigaData
   local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp data/local/giga_man_simp
   utils/prepare_lang.sh data/local/dict_giga_man_simp "<UNK>" \
     data/local/lang_giga_man_simp data/lang_giga_man_simp
