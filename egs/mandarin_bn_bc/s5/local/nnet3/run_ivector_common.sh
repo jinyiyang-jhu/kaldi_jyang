@@ -69,7 +69,7 @@ if [ $stage -le 3 ]; then
   fi
 
   for datadir in ${train_set}_sp dev; do
-    utils/copy_data_dir.sh data/$datadir data/${datadir}_hires
+    utils/copy_data_dir.sh --validate-opts "--non-print" data/$datadir data/${datadir}_hires
   done
 
   # do volume-perturbation on the training data prior to extracting hires
