@@ -19,7 +19,7 @@ tgt_lex_dir=$3
 
 mkdir -p $tgt_lex_dir
 
-for f in silence_phones.txt nonsilence_phones.txt lexiconp.txt extra_questions.txt;do
+for f in silence_phones.txt nonsilence_phones.txt lexiconp.txt extra_questions.txt optional_sial_silence.txt;do
   [ ! -f $lex_dir_1/$f ] && echo "$0: no such file $lex_dir_1/$f" && exit 1;
   [ ! -f $lex_dir_2/$f ] && echo "$0: no such file $lex_dir_2/$f" && exit 1;
   # We copy the phone related files from gale dictionary directory, since they
