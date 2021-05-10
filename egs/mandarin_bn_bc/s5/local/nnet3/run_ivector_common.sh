@@ -12,7 +12,6 @@ stage=0
 nj=80
 train_set=train_cleanup   # you might set this to e.g. train.
 dev_set=
-dev_hires=${dev_set}_hires
 affix="_cleanup"
 gmm=tri6b_cleanup # This specifies a GMM-dir from the features of the type you're training the system on;
                          # it should contain alignments for 'train_set'.
@@ -25,6 +24,8 @@ ali_dir=exp/${gmm}_sp_ali
 . ./path.sh
 . utils/parse_options.sh
 
+dev_hires=${dev_set}_hires
+
 for f in data/${train_set}/feats.scp $gmm/final.mdl; do
   if [ ! -f $f ]; then
     echo "$0: expected file $f to exist"
@@ -32,7 +33,7 @@ for f in data/${train_set}/feats.scp $gmm/final.mdl; do
   fi
 done
 
-if [ $stage -le 1 ]; then
+if [ $stage -le 0 ]; then
   mfccdir=mfcc_sp
   #Although the nnet will be trained by high resolution data, we still have to
   # perturb the normal data to get the alignment.  _sp stands for speed-perturbed
@@ -47,7 +48,7 @@ if [ $stage -le 1 ]; then
   utils/fix_data_dir.sh data/${train_set}_sp
 fi
 
-if [ $stage -le 2 ]; then
+if [ $stage -le 1 ]; then
   if [ -f $ali_dir/ali.1.gz ]; then
     echo "$0: alignments in $ali_dir appear to already exist.  Please either remove them "
     echo " ... or use a later --stage option."
@@ -58,7 +59,7 @@ if [ $stage -le 2 ]; then
     data/${train_set}_sp $lang $gmm $ali_dir || exit 1
 fi
 
-if [ $stage -le 3 ]; then
+if [ $stage -le 2 ]; then
   echo "$0: creating high-resolution MFCC features"
 
   # this shows how you can split across multiple file-systems.  we'll split the
