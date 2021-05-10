@@ -11,6 +11,8 @@ set -e -o pipefail
 stage=0
 nj=80
 train_set=train_cleanup   # you might set this to e.g. train.
+dev_set=
+dev_hires=${dev_set}_hires
 affix="_cleanup"
 gmm=tri6b_cleanup # This specifies a GMM-dir from the features of the type you're training the system on;
                          # it should contain alignments for 'train_set'.
@@ -68,7 +70,7 @@ if [ $stage -le 3 ]; then
     utils/create_split_dir.pl /export/b0{5,6,7,8}/$USER/kaldi-data/mfcc/mandarin-$(date +'%m_%d_%H_%M')/s5/$mfccdir/storage $mfccdir/storage
   fi
 
-  for datadir in ${train_set}_sp dev; do
+  for datadir in ${train_set}_sp $dev_set; do
     utils/copy_data_dir.sh --validate-opts "--non-print" data/$datadir data/${datadir}_hires
   done
 
@@ -76,14 +78,14 @@ if [ $stage -le 3 ]; then
   # features; this helps make trained nnets more invariant to test data volume.
   utils/data/perturb_data_dir_volume.sh data/${train_set}_sp_hires
 
-  for datadir in ${train_set}_sp_hires dev_hires; do
+  for datadir in ${train_set}_sp_hires $dev_hires; do
     steps/make_mfcc_pitch_online.sh --nj $nj --mfcc-config conf/mfcc_hires.conf \
       --cmd "$train_cmd" data/${datadir} exp/make_hires_sp/$datadir $mfccdir || exit 1
     steps/compute_cmvn_stats.sh data/${datadir} exp/make_hires_sp/$datadir $mfccdir
     utils/fix_data_dir.sh data/${datadir}
   
     # make MFCC data dir without pitch to extract iVector
-    utils/data/limit_feature_dim.sh 0:39 data/${datadir} data/${datadir}_nopitch || exit 1;
+    utils/data/limit_feature_dim.sh --validate-opts "--non-print" 0:39 data/${datadir} data/${datadir}_nopitch || exit 1;
     steps/compute_cmvn_stats.sh data/${datadir}_nopitch exp/make_hires_sp/${datadir}_nopitch $mfccdir || exit 1;
   done
 fi
@@ -153,7 +155,7 @@ if [ $stage -le 5 ]; then
   # Also extract iVectors for the test data, but in this case we don't need the speed
   # perturbation (sp).
 
-  for data in dev; do
+  for data in $dev_set; do
     steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" --nj $nj \
       data/${data}_hires_nopitch exp/nnet3${nnet3_affix}/extractor \
       exp/nnet3${nnet3_affix}/ivectors_${data}_hires_nopitch

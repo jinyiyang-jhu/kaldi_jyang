@@ -5,7 +5,7 @@
 
 # The script creates a new data directory by selecting a specified
 # dimension range of the features in the source directory.
-
+validate_opts=
 . utils/parse_options.sh
 
 if [ $# != 3 ]; then
