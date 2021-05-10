@@ -236,7 +236,7 @@ fi
 if [ $stage -le 13 ]; then
   echo "Expand the lexicon with Gigaword"
   local/gigaword_prep_txt.sh $GIGA_TEXT $gigaData
-  local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp data/local/giga_man_simp
+  local/mandarin_prepare_dict.sh data/local/dict_giga_man_simp $gigaData
   utils/prepare_lang.sh data/local/dict_giga_man_simp "<UNK>" \
     data/local/lang_giga_man_simp data/lang_giga_man_simp
   # Merge the previous dictionary with GIGAWORD dictionary
