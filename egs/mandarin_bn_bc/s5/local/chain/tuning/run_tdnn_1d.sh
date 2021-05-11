@@ -7,6 +7,7 @@ stage=-1
 decode_nj=60
 ali_nj=80
 train_set=train_gale_tdt_cleanup
+dev_set=gale/dev
 gmm=tri6b_cleanup
 nnet3_affix=_cleanup
 lang_affix="_large_test"
@@ -60,6 +61,7 @@ if [ $stage -le 12 ]; then
   echo "Training and extracting ivectors"
   local/nnet3/run_ivector_common.sh --stage $stage \
                                     --train-set $train_set \
+                                    --dev-set $dev_set \
                                     --gmm exp/$gmm \
                                     --num-threads-ubm 6 --num-processes 3 \
                                     --nnet3-affix "$nnet3_affix" || exit 1;
