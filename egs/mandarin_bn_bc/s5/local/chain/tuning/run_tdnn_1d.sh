@@ -6,6 +6,7 @@ set -e
 stage=-1
 decode_nj=60
 ali_nj=80
+num_threads=16
 train_set=train_gale_tdt_cleanup
 dev_set=gale/dev
 gmm=tri6b_cleanup
@@ -63,7 +64,7 @@ if [ $stage -le 12 ]; then
                                     --train-set $train_set \
                                     --dev-set $dev_set \
                                     --gmm exp/$gmm \
-                                    --num-threads-ubm 6 --num-processes 3 \
+                                    --num-threads-ubm $num_threads --num-processes 3 \
                                     --nnet3-affix "$nnet3_affix" || exit 1;
 fi
 
