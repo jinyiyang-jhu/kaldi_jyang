@@ -37,6 +37,7 @@
 utts_per_spk_max=-1
 seconds_per_spk_max=-1
 respect_speaker_info=true
+opts=
 # end configuration section
 
 . utils/parse_options.sh
@@ -117,7 +118,6 @@ orig_num_spk=$(wc -l <$srcdir/spk2utt)
 new_num_spk=$(wc -l <$destdir/spk2utt)
 
 echo "$0: copied data from $srcdir to $destdir, number of speakers changed from $orig_num_spk to $new_num_spk"
-opts=
 [ ! -f $srcdir/feats.scp ] && opts="--no-feats"
 [ ! -f $srcdir/text ] && opts="$opts --no-text"
 [ ! -f $srcdir/wav.scp ] && opts="$opts --no-wav"

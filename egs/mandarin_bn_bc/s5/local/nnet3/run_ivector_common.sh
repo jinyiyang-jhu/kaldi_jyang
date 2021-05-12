@@ -146,7 +146,7 @@ if [ $stage -le 5 ]; then
   # handle per-utterance decoding well (the iVector starts at zero at the beginning
   # of each pseudo-speaker).
   temp_data_root=${ivectordir}
-  utils/data/modify_speaker_info.sh --utts-per-spk-max 2 \
+  utils/data/modify_speaker_info.sh --utts-per-spk-max 2 --opts "--non-print" \
     data/$train_set ${temp_data_root}/${train_set}_max2
 
   steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" --nj $nj \
