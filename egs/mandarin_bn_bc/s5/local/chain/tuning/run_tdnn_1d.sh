@@ -64,7 +64,7 @@ if [ $stage -le 12 ]; then
                                     --train-set $train_set \
                                     --dev-set $dev_set \
                                     --gmm exp/$gmm \
-                                    --num-threads-ubm $num_threads --num-processes 3 \
+                                    --num-threads-ubm $num_threads --num-processes 4 \
                                     --nnet3-affix "$nnet3_affix" || exit 1;
 fi
 
